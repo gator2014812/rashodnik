@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Расходник">
+<meta name="theme-color" content="#F2F5F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1514" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="manifest" href="manifest.json">
+<title>Расходник</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#F2F5F3; --surface:#FFFFFF; --ink:#15201C; --muted:#6B7873; --line:#DCE3DF;
+  --accent:#0E7C6B; --accent-ink:#FFFFFF; --accent-soft:#DDF1EB; --danger:#B3402E; --danger-soft:#F7E3DF;
+  --bar:#0E7C6B; --bar-dim:#B9DCD3; --shadow:0 1px 2px rgba(21,32,28,.06),0 8px 24px -12px rgba(21,32,28,.18);
+  --sans:"Golos Text",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1514; --surface:#171F1D; --ink:#E6ECE9; --muted:#8C9993; --line:#27322E;
+    --accent:#45C4AC; --accent-ink:#0B1F1B; --accent-soft:#16302B; --danger:#E5735F; --danger-soft:#3A1F1A;
+    --bar:#45C4AC; --bar-dim:#254740; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -12px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1514; --surface:#171F1D; --ink:#E6ECE9; --muted:#8C9993; --line:#27322E;
+  --accent:#45C4AC; --accent-ink:#0B1F1B; --accent-soft:#16302B; --danger:#E5735F; --danger-soft:#3A1F1A;
+  --bar:#45C4AC; --bar-dim:#254740; --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px -12px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.4;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+
+.wrap{max-width:540px;margin:0 auto;padding:0 16px 96px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:12px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;flex-direction:column;gap:0;min-width:0}
+.brand h1{margin:0;font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.1}
+.brand .sync{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{min-width:44px;height:34px;padding:0 12px;border-radius:7px;font-weight:600;color:var(--muted);transition:background .15s,color .15s}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.iconbtn{width:38px;height:38px;border-radius:10px;display:inline-grid;place-items:center;color:var(--muted);border:1px solid var(--line);background:var(--surface)}
+.iconbtn svg{width:18px;height:18px}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.entry{margin-top:6px;padding:12px}
+.entry textarea{width:100%;min-height:96px;resize:vertical;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--bg);font-family:var(--mono);font-size:15px;line-height:1.5}
+.entry textarea::placeholder{color:var(--muted);opacity:.8}
+.entry .row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.35}
+.hint b{font-weight:600;color:var(--ink)}
+.primary{background:var(--accent);color:var(--accent-ink);font-weight:600;height:40px;padding:0 18px;border-radius:10px}
+.primary:disabled{opacity:.5;cursor:default}
+.preview{margin-top:10px;border-top:1px dashed var(--line);padding-top:8px;display:grid;gap:4px;font-size:14px}
+.preview .p{display:flex;justify-content:space-between;gap:12px}
+.preview .p .n{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.preview .bad{color:var(--danger)}
+
+.period{margin-top:16px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.tabs button{height:34px;border-radius:7px;font-weight:600;color:var(--muted)}
+.tabs button[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent)}
+.summary{margin-top:10px;padding:14px 14px 12px}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.nav .lbl{font-weight:600;text-transform:none;text-align:center;flex:1}
+.nav button{width:36px;height:36px;border-radius:9px;color:var(--muted);display:grid;place-items:center}
+.nav button:hover{background:var(--bg)}
+.nav button:disabled{opacity:.3;cursor:default}
+.total{margin-top:6px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.total .big{font-size:34px;font-weight:600;line-height:1.05}
+.total .sub{font-size:13px;color:var(--muted);text-align:right}
+.total .sub .num{color:var(--ink)}
+.chart{margin-top:14px;display:flex;align-items:flex-end;gap:3px;height:64px;padding-top:4px}
+.chart .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;min-width:0}
+.chart .b i{display:block;background:var(--bar-dim);border-radius:3px 3px 0 0;min-height:2px}
+.chart .b.on i{background:var(--bar)}
+.chart .b.sel i{outline:2px solid var(--ink);outline-offset:-2px}
+.chart .b b{display:block;font-size:10px;color:var(--muted);text-align:center;font-weight:500;margin-top:4px;font-family:var(--mono)}
+.chart .b.wk b{color:var(--accent)}
+
+.days{margin-top:14px;display:grid;gap:10px}
+.day{padding:4px 0 2px}
+.day h3{margin:0;display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 14px;font-size:14px;font-weight:600}
+.day h3 .d{color:var(--muted);font-weight:500}
+.day h3 .d strong{color:var(--ink);font-weight:600}
+.rows{display:grid}
+.r{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--line);text-align:left;width:100%}
+.r:hover{background:color-mix(in srgb,var(--accent-soft) 40%,transparent)}
+.r .note{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r .note.empty{color:var(--muted);font-style:italic}
+.r .amt{text-align:right;font-weight:500}
+.r .orig{display:block;font-size:11.5px;color:var(--muted);font-weight:400}
+.edit{border-top:1px solid var(--line);padding:10px 14px;display:grid;gap:8px;background:var(--bg)}
+.edit .l1{display:grid;grid-template-columns:1fr 84px;gap:8px}
+.edit input,.edit select{height:38px;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:var(--surface)}
+.edit .l3{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap}
+.ratebox{display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.ratebox .ghost{height:30px;padding:0 10px;font-size:13px}
+.ghost{height:36px;padding:0 14px;border-radius:9px;border:1px solid var(--line);background:var(--surface);font-weight:500}
+.ghost.danger{color:var(--danger);border-color:transparent;background:var(--danger-soft)}
+.empty-state{padding:28px 16px;text-align:center;color:var(--muted);font-size:14.5px}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:20;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+dialog{border:0;border-radius:16px;padding:0;background:var(--surface);color:var(--ink);width:min(520px,calc(100% - 24px));box-shadow:var(--shadow);max-height:calc(100% - 24px)}
+dialog::backdrop{background:rgba(10,16,14,.45)}
+.dlg{padding:18px 16px 16px;display:grid;gap:16px}
+.dlg h2{margin:0;font-size:18px;display:flex;justify-content:space-between;align-items:center}
+.dlg h2 button{color:var(--muted);width:32px;height:32px;border-radius:8px}
+.fld{display:grid;gap:6px}
+.fld label{font-size:13px;color:var(--muted);font-weight:500}
+.fld input,.fld select,.fld textarea{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--bg);width:100%}
+.fld textarea{min-height:110px;font-family:var(--mono);font-size:13.5px}
+.rate{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:10px}
+.rate span{font-weight:500;white-space:nowrap}
+.sect{display:grid;gap:10px;padding-top:14px;border-top:1px solid var(--line)}
+.sect h4{margin:0;font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.note-sm{font-size:12.5px;color:var(--muted)}
+.chk{display:flex;gap:8px;align-items:flex-start;font-size:13.5px;line-height:1.35}
+.chk input{margin-top:3px;accent-color:var(--accent)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><h1>Расходник</h1><span class="sync" id="syncState">на этом устройстве</span></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div class="seg" role="group" aria-label="Валюта показа" id="curSeg">
+        <button data-cur="VND" aria-pressed="true">₫</button>
+        <button data-cur="USD" aria-pressed="false">$</button>
+        <button data-cur="RUB" aria-pressed="false">₽</button>
+      </div>
+      <button class="iconbtn" id="openSettings" aria-label="Настройки и курсы">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="card entry">
+    <textarea id="input" placeholder="15.09
+-45k - завтрак
+-350k - сходил в больницу
+-15$ - такси"></textarea>
+    <div id="preview" class="preview" hidden></div>
+    <div class="row">
+      <div class="hint">Дата строкой <b>дд.мм</b>, дальше траты. Без даты — сегодня. Без знака валюты — <b id="defCurHint">донги</b>; <b>k</b> = тысяча. Курс фиксируется при записи.</div>
+      <button class="primary" id="saveBtn" disabled>Записать</button>
+    </div>
+  </section>
+
+  <section class="period">
+    <div class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-mode="day" aria-pressed="false">День</button>
+      <button role="tab" data-mode="week" aria-pressed="true">Неделя</button>
+      <button role="tab" data-mode="month" aria-pressed="false">Месяц</button>
+    </div>
+    <div class="card summary">
+      <div class="nav">
+        <button id="prev" aria-label="Раньше"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+        <div class="lbl" id="periodLabel">—</div>
+        <button id="next" aria-label="Позже"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+      </div>
+      <div class="total">
+        <div class="big num" id="total">0</div>
+        <div class="sub" id="subtotal"></div>
+      </div>
+      <div class="chart" id="chart" aria-label="Траты по дням"></div>
+    </div>
+    <div class="days" id="days"></div>
+  </section>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<dialog id="settings">
+  <div class="dlg">
+    <h2>Курсы и настройки <button id="closeSettings" aria-label="Закрыть">✕</button></h2>
+    <div class="fld">
+      <label>Курсы к доллару</label>
+      <div class="rate"><span>1 $ =</span><input class="num" id="rateRUB" type="number" step="0.01" inputmode="decimal" aria-label="рублей за доллар"></div>
+      <div class="rate"><span>1 $ =</span><input class="num" id="rateVND" type="number" step="1" inputmode="numeric" aria-label="донгов за доллар"></div>
+      <div class="note-sm">Рубли и донги за один доллар. Обновлено: <span id="ratesUpdated">—</span><span id="ratesSrc"></span>. Курс фиксируется в каждой записи в момент её создания (для прошлых дат — курс того дня), поэтому старые траты не «плывут» при смене курса.</div>
+      <label class="chk"><input type="checkbox" id="autoRates"> Обновлять курсы автоматически (раз в несколько часов, при наличии интернета)</label>
+      <div class="btns"><button class="ghost" id="refreshRates">Обновить курсы сейчас</button></div>
+    </div>
+    <div class="fld">
+      <label for="defCur">Валюта по умолчанию (когда знак не указан)</label>
+      <select id="defCur"><option value="VND">Донг ₫</option><option value="USD">Доллар $</option><option value="RUB">Рубль ₽</option></select>
+    </div>
+    <div class="btns"><button class="primary" id="saveSettings">Сохранить</button></div>
+
+    <div class="sect">
+      <h4>Резервная копия</h4>
+      <div class="fld">
+        <textarea id="backup" placeholder="Сюда можно вставить записи в том же формате (дата строкой, ниже траты) и нажать «Импортировать»"></textarea>
+      </div>
+      <div class="btns">
+        <button class="ghost" id="exportBtn">Выгрузить всё в текст</button>
+        <button class="ghost" id="copyBtn">Скопировать</button>
+        <button class="ghost" id="importBtn">Импортировать</button>
+      </div>
+      <div class="note-sm" id="storageNote"></div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(() => {
+'use strict';
+const CUR = {
+  VND:{sym:'₫',name:'донги',dec:0,after:true},
+  USD:{sym:'$',name:'доллары',dec:2,after:false},
+  RUB:{sym:'₽',name:'рубли',dec:2,after:true},
+};
+const LS_KEY = 'rashodnik.v1';
+const LS_UI = 'rashodnik.ui';
+const state = {
+  months:{},                 // 'YYYY-MM' -> [entries]
+  settings:{ rates:{RUB:84.34, VND:25984}, ratesUpdated:'2026-09-15', defaultCur:'VND', autoRates:true, ratesFetched:0 },
+  viewCur:'VND', mode:'week', anchor: today(), editing:null,
+};
+const $ = s => document.querySelector(s);
+
+/* ---------- dates ---------- */
+function today(){ const d=new Date(); return ymd(d); }
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parseYmd(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function addDays(s,n){ const d=parseYmd(s); d.setDate(d.getDate()+n); return ymd(d); }
+function addMonths(s,n){ const d=parseYmd(s); d.setDate(1); d.setMonth(d.getMonth()+n); return ymd(d); }
+function weekStart(s){ const d=parseYmd(s); const wd=(d.getDay()+6)%7; d.setDate(d.getDate()-wd); return ymd(d); }
+function monthKey(s){ return s.slice(0,7); }
+const MONTHS_GEN=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const MONTHS_SHORT=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const MONTHS_NOM=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const WD=['вс','пн','вт','ср','чт','пт','сб'];
+function fmtDayLong(s){ const d=parseYmd(s); return d.getDate()+' '+MONTHS_GEN[d.getMonth()]+', '+WD[d.getDay()]; }
+function fmtDayShort(s){ const d=parseYmd(s); return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0'); }
+function periodRange(){
+  const a=state.anchor;
+  if(state.mode==='day') return [a,a];
+  if(state.mode==='week'){ const w=weekStart(a); return [w,addDays(w,6)]; }
+  const m=a.slice(0,7)+'-01'; return [m, addDays(addMonths(m,1),-1)];
+}
+function periodLabel(){
+  const [s,e]=periodRange();
+  if(state.mode==='day') return s===today()?'Сегодня, '+fmtDayLong(s):fmtDayLong(s);
+  if(state.mode==='week'){ const ds=parseYmd(s),de=parseYmd(e);
+    return ds.getMonth()===de.getMonth()? `${ds.getDate()}–${de.getDate()} ${MONTHS_GEN[de.getMonth()]}`
+      : `${ds.getDate()} ${MONTHS_SHORT[ds.getMonth()]} – ${de.getDate()} ${MONTHS_SHORT[de.getMonth()]}`; }
+  const d=parseYmd(s); return MONTHS_NOM[d.getMonth()]+' '+d.getFullYear();
+}
+
+/* ---------- money ---------- */
+function convert(amount,from,to,rates){ rates=rates||state.settings.rates; if(from===to) return amount; const usd = from==='USD'? amount : amount/rates[from]; return to==='USD'?usd:usd*rates[to]; }
+function conv(x,to){ return convert(x.amount,x.cur,to,x.rate); }
+function fmtRate(r){ return `1 $ = ${r.RUB.toLocaleString('ru-RU',{maximumFractionDigits:2})} ₽ · ${Math.round(r.VND).toLocaleString('ru-RU')} ₫`; }
+function fmtMoney(amount,cur,compact){
+  const c=CUR[cur]; let dec=c.dec;
+  if(cur!=='VND' && Math.abs(amount-Math.round(amount))<0.005) dec=0;
+  if(cur==='VND') amount=Math.round(amount);
+  let s=amount.toLocaleString('ru-RU',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+  return c.after? s+' '+c.sym : c.sym+s;
+}
+
+/* ---------- parsing ---------- */
+const CUR_RE = /(\$|usd|долл\w*|бакс\w*|₽|руб\w*|р\.?|rub|₫|đ|d|vnd|дон\w*|д\.?)?/.source;
+function detectCur(tok){
+  if(!tok) return null; tok=tok.toLowerCase();
+  if(tok==='$'||tok==='usd'||tok.startsWith('долл')||tok.startsWith('бакс')) return 'USD';
+  if(tok==='₽'||tok==='rub'||tok.startsWith('руб')||tok==='р'||tok==='р.') return 'RUB';
+  if(tok==='₫'||tok==='đ'||tok==='d'||tok==='vnd'||tok.startsWith('дон')||tok==='д'||tok==='д.') return 'VND';
+  return null;
+}
+function parseNumber(raw,cur){
+  let s=raw.replace(/\s/g,'');
+  const m=s.match(/^(\d+)([.,])(\d{3})$/);
+  if(m){ if(cur==='VND') return Number(m[1]+m[3]); return Number(m[1]+'.'+m[3]); }
+  if(/^\d{1,3}([.,]\d{3})+$/.test(s)) return Number(s.replace(/[.,]/g,''));
+  s=s.replace(',','.');
+  const n=Number(s); return isFinite(n)?n:NaN;
+}
+const AMT_RE = new RegExp('^[\\-−–—+]?\\s*(\\d[\\d\\s.,]*)\\s*(k|к|тыс\\.?)?\\s*'+CUR_RE+'(?=$|\\s|[-–—:,;])\\s*(?:[-–—:;]\\s*)?(.*)$','i');
+const AMT_ANY = new RegExp('[\\-−–—+]?\\s*(\\d[\\d\\s.,]*)\\s*(k|к|тыс\\.?)?\\s*'+CUR_RE+'(?=$|\\s|[-–—:,;])','i');
+const DATE_RE = /^(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?\s*[:\-–—]?\s*$/;
+function parseInput(text, defCur){
+  const out=[]; const bad=[]; let date=today(); const now=new Date();
+  for(let raw of text.split(/\n/)){
+    const line=raw.trim(); if(!line) continue;
+    const dm=line.match(DATE_RE);
+    if(dm){
+      let y = dm[3]? Number(dm[3].length===2?'20'+dm[3]:dm[3]) : now.getFullYear();
+      const d=new Date(y, Number(dm[2])-1, Number(dm[1]));
+      if(!dm[3] && d.getTime() > now.getTime()+86400000*2) d.setFullYear(y-1);
+      if(isNaN(d)||d.getMonth()!==Number(dm[2])-1){ bad.push(line); continue; }
+      date=ymd(d); continue;
+    }
+    let rate=null; const rt=line.match(/\s*\{([\d.]+);([\d.]+)\}\s*$/);
+    const body = rt ? line.slice(0,rt.index).trim() : line;
+    if(rt){ const R=Number(rt[1]),V=Number(rt[2]); if(R>0&&V>0) rate={RUB:R,VND:V}; }
+    let m=body.match(AMT_RE), note;
+    if(m){ note=m[4]; }
+    else { m=body.match(AMT_ANY); if(m){ note=body.replace(m[0],'').replace(/^\s*[-–—:;]\s*|\s*[-–—:;]\s*$/g,'').trim(); } }
+    if(!m){ bad.push(line); continue; }
+    let cur=detectCur(m[3]); if(!cur) cur=defCur;
+    let amount=parseNumber(m[1],cur);
+    if(m[2]) amount*=1000;
+    if(!isFinite(amount)||amount<=0){ bad.push(line); continue; }
+    const ent={date, amount, cur, note:(note||'').trim()}; if(rate) ent.rate=rate; out.push(ent);
+  }
+  return {entries:out, bad};
+}
+
+/* ---------- storage ---------- */
+function loadLocal(){
+  try{ const raw=localStorage.getItem(LS_KEY); if(raw){ const o=JSON.parse(raw); if(o.months) state.months=o.months; if(o.settings) state.settings={...state.settings,...o.settings, rates:{...state.settings.rates,...(o.settings.rates||{})}}; } }catch(e){}
+  try{ const ui=JSON.parse(localStorage.getItem(LS_UI)||'{}'); if(ui.viewCur&&CUR[ui.viewCur]) state.viewCur=ui.viewCur; if(ui.mode) state.mode=ui.mode; }catch(e){}
+}
+function saveLocal(){ try{ localStorage.setItem(LS_KEY, JSON.stringify({months:state.months, settings:state.settings})); }catch(e){} }
+function saveUI(){ try{ localStorage.setItem(LS_UI, JSON.stringify({viewCur:state.viewCur, mode:state.mode})); }catch(e){} }
+function persistMonth(mk){ saveLocal(); return Promise.resolve(); }
+function persistSettings(){ saveLocal(); return Promise.resolve(); }
+function setSync(t){ $('#syncState').textContent=t; }
+
+/* ---------- live rates (open.er-api.com, free, no key) ---------- */
+const RATES_URL='https://open.er-api.com/v6/latest/USD';
+const RATES_URL2='https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.min.json';
+async function fetchRates(force){
+  if(state.settings.autoRates===false && !force){ setSync('курсы вручную'); return false; }
+  const last=state.settings.ratesFetched||0;
+  if(!force && Date.now()-last < 6*3600*1000){ setSync('курсы от '+fmtDayShort(state.settings.ratesUpdated||today())); return false; }
+  if(!navigator.onLine){ setSync('офлайн · курсы от '+fmtDayShort(state.settings.ratesUpdated||today())); return false; }
+  try{
+    setSync('обновляю курсы…');
+    let rub, vnd, src;
+    try{
+      const r=await fetch(RATES_URL,{cache:'no-store'}); const j=await r.json();
+      if(j.result!=='success'||!j.rates||!j.rates.RUB||!j.rates.VND) throw new Error('bad payload');
+      rub=j.rates.RUB; vnd=j.rates.VND; src='open.er-api.com';
+    }catch(e1){
+      const r=await fetch(RATES_URL2,{cache:'no-store'}); const j=await r.json();
+      if(!j.usd||!j.usd.rub||!j.usd.vnd) throw new Error('bad payload 2');
+      rub=j.usd.rub; vnd=j.usd.vnd; src='currency-api';
+    }
+    state.settings.rates={RUB:Math.round(rub*100)/100, VND:Math.round(vnd)};
+    state.settings.ratesUpdated=today(); state.settings.ratesFetched=Date.now(); state.settings.ratesSource=src;
+    saveLocal(); setSync('курсы от '+fmtDayShort(today())); render(); return true;
+  }catch(e){ console.warn('rates fetch failed',e); setSync('курсы от '+fmtDayShort(state.settings.ratesUpdated||today())+' (нет связи)'); return false; }
+}
+$('#storageNote').textContent='Записи хранятся в памяти этого телефона (в самом приложении). Раз в месяц делай выгрузку в текст — это единственная страховка, если удалишь приложение.';
+
+/* ---------- data ops ---------- */
+function allEntries(){ return Object.values(state.months).flat(); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+/* курс на дату записи: сегодня — текущий; прошлые даты — исторический из currency-api (кэш), иначе текущий */
+const HIST_KEY='rashodnik.hist';
+function histCache(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY)||'{}'); }catch(e){ return {}; } }
+async function ratesForDate(date){
+  if(date>=today()) return {...state.settings.rates};
+  const cache=histCache(); if(cache[date]) return cache[date];
+  if(!navigator.onLine) return {...state.settings.rates};
+  try{
+    const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),6000);
+    const r=await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${date}/v1/currencies/usd.min.json`,{signal:ctrl.signal}); clearTimeout(t);
+    const j=await r.json(); if(!j.usd||!j.usd.rub||!j.usd.vnd) throw new Error('bad');
+    const rate={RUB:Math.round(j.usd.rub*100)/100, VND:Math.round(j.usd.vnd)};
+    cache[date]=rate; try{ localStorage.setItem(HIST_KEY,JSON.stringify(cache)); }catch(e){}
+    return rate;
+  }catch(e){ return {...state.settings.rates}; }
+}
+async function addEntries(list){
+  const touched=new Set();
+  // перед записью освежаем курс, если он старый и есть сеть (ждём не дольше 5 с)
+  if(state.settings.autoRates!==false && Date.now()-(state.settings.ratesFetched||0) > 6*3600*1000 && navigator.onLine){
+    await Promise.race([fetchRates(true), new Promise(r=>setTimeout(r,5000))]);
+  }
+  const byDate={}; for(const e of list){ if(!e.rate) (byDate[e.date] ||= []).push(e); }
+  await Promise.all(Object.keys(byDate).map(async d=>{ const r=await ratesForDate(d); byDate[d].forEach(e=>e.rate=r); }));
+  for(const e of list){ const mk=monthKey(e.date); (state.months[mk] ||= []).push({id:uid(), ts:Date.now(), ...e}); touched.add(mk); }
+  return Promise.all([...touched].map(persistMonth));
+}
+function removeEntry(id){
+  for(const mk of Object.keys(state.months)){ const i=state.months[mk].findIndex(e=>e.id===id); if(i>=0){ state.months[mk].splice(i,1); return persistMonth(mk); } }
+}
+function updateEntry(id, patch){
+  for(const mk of Object.keys(state.months)){ const i=state.months[mk].findIndex(e=>e.id===id); if(i>=0){
+    const e={...state.months[mk][i], ...patch};
+    if(monthKey(e.date)!==mk){ state.months[mk].splice(i,1); (state.months[monthKey(e.date)] ||= []).push(e); return Promise.all([persistMonth(mk), persistMonth(monthKey(e.date))]); }
+    state.months[mk][i]=e; return persistMonth(mk);
+  } }
+}
+function entriesIn(s,e){ return allEntries().filter(x=>x.date>=s && x.date<=e); }
+function sumIn(list){ return list.reduce((a,x)=>a+conv(x,state.viewCur),0); }
+
+/* ---------- render ---------- */
+function render(){
+  document.querySelectorAll('#curSeg button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.cur===state.viewCur)));
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.mode===state.mode)));
+  $('#defCurHint').textContent=CUR[state.settings.defaultCur].name;
+  const [s,e]=periodRange();
+  $('#periodLabel').textContent=periodLabel();
+  $('#next').disabled = e>=today();
+  const list=entriesIn(s,e).sort((a,b)=> a.date===b.date ? (a.ts||0)-(b.ts||0) : (a.date<b.date?1:-1));
+  const total=sumIn(list);
+  $('#total').textContent=fmtMoney(total,state.viewCur);
+  // subtotal: avg/day + other currencies
+  const others=Object.keys(CUR).filter(c=>c!==state.viewCur).map(c=>fmtMoney(list.reduce((a,x)=>a+conv(x,c),0),c)).join(' · ');
+  let sub='';
+  if(state.mode!=='day'){ const end = e<today()? e : today(); const daysPassed = end<s ? 1 : Math.round((parseYmd(end)-parseYmd(s))/86400000)+1;
+    if(list.length) sub+=`в среднем <span class="num">${fmtMoney(total/Math.max(1,daysPassed),state.viewCur)}</span> в день<br>`; }
+  sub+=`<span class="num">${others}</span>`;
+  $('#subtotal').innerHTML=sub;
+  renderChart(s,e,list);
+  renderDays(list);
+}
+function renderChart(s,e,list){
+  const chart=$('#chart'); chart.innerHTML='';
+  let days=[];
+  if(state.mode==='day'){ // show surrounding 7 days ending on anchor
+    for(let i=6;i>=0;i--) days.push(addDays(state.anchor,-i));
+    list=entriesIn(days[0],days[6]);
+  } else { for(let d=s; d<=e; d=addDays(d,1)) days.push(d); }
+  const per=Object.fromEntries(days.map(d=>[d,0]));
+  list.forEach(x=>{ if(x.date in per) per[x.date]+=conv(x,state.viewCur); });
+  const max=Math.max(...Object.values(per),0);
+  chart.hidden = max===0 && state.mode!=='day';
+  days.forEach((d,i)=>{
+    const v=per[d]; const el=document.createElement('button'); el.type='button';
+    el.className='b'+(v>0?' on':'')+(d===state.anchor&&state.mode!=='month'?' sel':'')+((state.mode==='month'&&parseYmd(d).getDay()===1)?' wk':'');
+    el.title=fmtDayShort(d)+' — '+fmtMoney(v,state.viewCur);
+    el.setAttribute('aria-label', el.title);
+    const h = max? Math.max(2, Math.round(v/max*44)) : 2;
+    const lbl = state.mode==='month' ? ((parseYmd(d).getDate()===1||parseYmd(d).getDay()===1)? String(parseYmd(d).getDate()):'') : (state.mode==='week'? WD[parseYmd(d).getDay()] : String(parseYmd(d).getDate()));
+    el.innerHTML=`<i style="height:${h}px"></i><b>${lbl}</b>`;
+    el.addEventListener('click',()=>{ state.anchor=d; state.mode='day'; saveUI(); render(); });
+    chart.appendChild(el);
+  });
+}
+function renderDays(list){
+  const root=$('#days'); root.innerHTML='';
+  if(!list.length){ root.innerHTML=`<div class="card empty-state">За этот период трат нет.<br>Запиши первую сверху — например <span class="num">-45k - завтрак</span>.</div>`; return; }
+  const byDay={}; list.forEach(x=>(byDay[x.date] ||= []).push(x));
+  Object.keys(byDay).sort().reverse().forEach(d=>{
+    const items=byDay[d];
+    const card=document.createElement('section'); card.className='card day';
+    card.innerHTML=`<h3><span class="d"><strong>${fmtDayShort(d)}</strong>, ${WD[parseYmd(d).getDay()]}${d===today()?' · сегодня':''}</span><span class="num">${fmtMoney(sumIn(items),state.viewCur)}</span></h3><div class="rows"></div>`;
+    const rows=card.querySelector('.rows');
+    items.forEach(x=>{
+      const shown=conv(x,state.viewCur);
+      if(state.editing===x.id){ rows.appendChild(editForm(x)); return; }
+      const b=document.createElement('button'); b.type='button'; b.className='r';
+      b.innerHTML=`<span class="note${x.note?'':' empty'}">${x.note?esc(x.note):'без описания'}</span><span class="amt num">−${fmtMoney(shown,state.viewCur)}${x.cur!==state.viewCur?`<span class="orig">${fmtMoney(x.amount,x.cur)}</span>`:''}</span>`;
+      b.addEventListener('click',()=>{ state.editing=x.id; render(); });
+      rows.appendChild(b);
+    });
+    root.appendChild(card);
+  });
+}
+function editForm(x){
+  const f=document.createElement('form'); f.className='edit';
+  f.innerHTML=`<div class="l1"><input class="num" id="e-amt" type="text" inputmode="decimal" value="${x.amount}" aria-label="Сумма"><select id="e-cur" aria-label="Валюта">${Object.keys(CUR).map(c=>`<option value="${c}"${c===x.cur?' selected':''}>${CUR[c].sym}</option>`).join('')}</select></div>
+  <input id="e-note" type="text" value="${esc(x.note)}" placeholder="описание" aria-label="Описание">
+  <input id="e-date" type="date" value="${x.date}" aria-label="Дата">
+  <div class="ratebox"><span class="num">${x.rate? 'Курс на момент записи: '+fmtRate(x.rate) : 'Курс не зафиксирован — считается по текущему'}</span><button type="button" class="ghost" id="e-rate">${x.rate?'Заменить текущим':'Зафиксировать текущий'}</button></div>
+  <div class="l3"><button type="button" class="ghost danger" id="e-del">Удалить</button><span style="display:flex;gap:8px"><button type="button" class="ghost" id="e-cancel">Отмена</button><button type="submit" class="primary" style="height:36px">Сохранить</button></span></div>`;
+  f.querySelector('#e-cancel').addEventListener('click',()=>{ state.editing=null; render(); });
+  f.querySelector('#e-rate').addEventListener('click',async()=>{ await updateEntry(x.id,{rate:{...state.settings.rates}}); render(); toast('Курс обновлён: '+fmtRate(state.settings.rates)); });
+  f.querySelector('#e-del').addEventListener('click',async()=>{ state.editing=null; await removeEntry(x.id); render(); toast('Удалено'); });
+  f.addEventListener('submit',async ev=>{ ev.preventDefault();
+    const cur=f.querySelector('#e-cur').value; const amount=parseNumber(f.querySelector('#e-amt').value,cur);
+    if(!isFinite(amount)||amount<=0){ toast('Сумма не распознана'); return; }
+    const date=f.querySelector('#e-date').value||x.date;
+    state.editing=null; await updateEntry(x.id,{amount,cur,note:f.querySelector('#e-note').value.trim(),date}); render(); toast('Сохранено');
+  });
+  return f;
+}
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+let toastT; function toast(t){ const el=$('#toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),1800); }
+
+/* ---------- input preview ---------- */
+function updatePreview(){
+  const text=$('#input').value; const pv=$('#preview');
+  if(!text.trim()){ pv.hidden=true; $('#saveBtn').disabled=true; return; }
+  const {entries,bad}=parseInput(text,state.settings.defaultCur);
+  let html=entries.map(e=>`<div class="p"><span class="n">${fmtDayShort(e.date)} · ${e.note?esc(e.note):'без описания'}</span><span class="num">−${fmtMoney(e.amount,e.cur)}</span></div>`).join('');
+  html+=bad.map(b=>`<div class="p bad"><span class="n">не понял: ${esc(b)}</span></div>`).join('');
+  pv.innerHTML=html; pv.hidden=false; $('#saveBtn').disabled=!entries.length;
+}
+$('#input').addEventListener('input',updatePreview);
+$('#saveBtn').addEventListener('click',async()=>{
+  const {entries}=parseInput($('#input').value,state.settings.defaultCur); if(!entries.length) return;
+  await addEntries(entries);
+  $('#input').value=''; updatePreview();
+  const last=entries[entries.length-1].date;
+  if(state.mode==='day') state.anchor=last; else if(last<periodRange()[0]||last>periodRange()[1]) state.anchor=last;
+  render(); toast((entries.length===1?'Записано':`Записано: ${entries.length}`)+' · '+fmtRate(entries[entries.length-1].rate||state.settings.rates));
+});
+
+/* ---------- controls ---------- */
+$('#curSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; state.viewCur=b.dataset.cur; saveUI(); render(); });
+$('#tabs').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; state.mode=b.dataset.mode; saveUI(); render(); });
+function shift(n){ if(state.mode==='day') state.anchor=addDays(state.anchor,n); else if(state.mode==='week') state.anchor=addDays(weekStart(state.anchor),7*n); else state.anchor=addMonths(state.anchor,n); render(); }
+$('#prev').addEventListener('click',()=>shift(-1));
+$('#next').addEventListener('click',()=>shift(1));
+
+const dlg=$('#settings');
+$('#openSettings').addEventListener('click',()=>{
+  $('#rateRUB').value=state.settings.rates.RUB; $('#rateVND').value=state.settings.rates.VND;
+  $('#ratesUpdated').textContent=state.settings.ratesUpdated? fmtDayShort(state.settings.ratesUpdated)+'.'+state.settings.ratesUpdated.slice(0,4) : '—';
+  $('#ratesSrc').textContent=state.settings.ratesSource?' · '+state.settings.ratesSource:' · вручную';
+  $('#autoRates').checked=state.settings.autoRates!==false;
+  $('#defCur').value=state.settings.defaultCur; $('#backup').value='';
+  dlg.showModal();
+});
+$('#closeSettings').addEventListener('click',()=>dlg.close());
+$('#refreshRates').addEventListener('click',async()=>{ const ok=await fetchRates(true); if(ok){ $('#rateRUB').value=state.settings.rates.RUB; $('#rateVND').value=state.settings.rates.VND; $('#ratesUpdated').textContent=fmtDayShort(today())+'.'+today().slice(0,4); $('#ratesSrc').textContent=' · '+state.settings.ratesSource; toast('Курсы обновлены'); } else toast('Не удалось получить курсы — проверь интернет'); });
+dlg.addEventListener('click',e=>{ if(e.target===dlg) dlg.close(); });
+$('#saveSettings').addEventListener('click',async()=>{
+  const r=Number($('#rateRUB').value), v=Number($('#rateVND').value);
+  if(!(r>0&&v>0)){ toast('Курсы должны быть больше нуля'); return; }
+  const ratesChanged = r!==state.settings.rates.RUB || v!==state.settings.rates.VND;
+  state.settings.rates={RUB:r,VND:v}; if(ratesChanged){ state.settings.ratesUpdated=today(); state.settings.ratesSource=''; }
+  state.settings.autoRates=$('#autoRates').checked;
+  state.settings.defaultCur=$('#defCur').value;
+  await persistSettings(); dlg.close(); render(); toast('Настройки сохранены');
+});
+function exportText(){
+  const byDay={}; allEntries().forEach(x=>(byDay[x.date] ||= []).push(x));
+  return Object.keys(byDay).sort().map(d=>{
+    const dd=parseYmd(d); const head=String(dd.getDate()).padStart(2,'0')+'.'+String(dd.getMonth()+1).padStart(2,'0')+'.'+dd.getFullYear();
+    return head+'\n'+byDay[d].sort((a,b)=>(a.ts||0)-(b.ts||0)).map(x=>`-${x.cur==='VND'?Math.round(x.amount):x.amount}${CUR[x.cur].sym}${x.note?' - '+x.note:''}${x.rate?` {${x.rate.RUB};${x.rate.VND}}`:''}`).join('\n');
+  }).join('\n\n');
+}
+$('#exportBtn').addEventListener('click',()=>{ $('#backup').value=exportText(); toast('Готово — скопируй текст ниже'); });
+$('#copyBtn').addEventListener('click',async()=>{ const t=$('#backup').value||exportText(); $('#backup').value=t; try{ await navigator.clipboard.writeText(t); toast('Скопировано'); }catch(e){ $('#backup').select(); toast('Выдели и скопируй вручную'); } });
+$('#importBtn').addEventListener('click',async()=>{
+  const {entries,bad}=parseInput($('#backup').value,state.settings.defaultCur);
+  if(!entries.length){ toast('Не нашёл ни одной траты'); return; }
+  const existing=new Set(allEntries().map(x=>x.date+'|'+x.amount+'|'+x.cur+'|'+x.note));
+  const fresh=entries.filter(e=>!existing.has(e.date+'|'+e.amount+'|'+e.cur+'|'+e.note));
+  await addEntries(fresh); render(); dlg.close();
+  toast(`Импортировано: ${fresh.length}${bad.length?`, не понял строк: ${bad.length}`:''}`);
+});
+
+/* ---------- boot ---------- */
+loadLocal();
+render(); updatePreview();
+fetchRates(false);
+window.addEventListener('online',()=>fetchRates(false));
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+})();
+</script>
+
+</body>
+</html>
