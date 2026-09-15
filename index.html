@@ -85,6 +85,19 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .chips button:active{background:var(--accent-soft)}
 .cat{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--accent-soft);font-size:13px;flex:none}
 
+.savings{margin-top:12px;padding:14px}
+.savings h3{margin:0;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.savings h3 span{color:var(--muted);font-weight:500;font-size:12.5px}
+.savings .due{font-size:26px;font-weight:600;line-height:1.1;margin:6px 0 2px;color:var(--accent)}
+.savings .due small{display:block;font-size:12.5px;color:var(--muted);font-weight:500;font-family:var(--sans)}
+.savings .items{display:grid;gap:8px;margin-top:10px}
+.savings .it{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--bg)}
+.savings .it .l{min-width:0;font-size:13.5px}
+.savings .it .l small{display:block;color:var(--muted);font-size:12px}
+.savings .it .primary{height:34px;padding:0 12px;font-size:14px}
+.savings .stats{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.savings .stats b{color:var(--ink);font-weight:500}
+.savings.done .due{color:var(--income)}
 .banner{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--warn-soft);color:var(--ink);display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:13.5px;flex-wrap:wrap}
 .banner .ghost{height:32px}
 
@@ -222,10 +235,12 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
     <div id="preview" class="preview" hidden></div>
     <div class="chips" id="chips"></div>
     <div class="row">
-      <div class="hint">Дата строкой <b>дд.мм</b> — для прошлых дней. Без знака валюты — <b id="defCurHint">донги</b>; <b>k</b> = тысяча; <b>+</b> в начале — доход.</div>
+      <div class="hint">Дата строкой <b>дд.мм</b> — для прошлых дней. Без знака валюты — <b id="defCurHint">донги</b>; <b>k</b> = тысяча; <b>+</b> в начале — доход (приложение посчитает, сколько отложить).</div>
       <button class="primary" id="saveBtn" disabled>Записать</button>
     </div>
   </section>
+
+  <section class="card savings" id="savings" hidden></section>
 
   <div class="banner" id="backupBanner" hidden>
     <span id="backupText">Резервной копии ещё не было.</span>
@@ -287,6 +302,11 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
     </div>
 
     <div class="fld">
+      <label>Откладывать с каждого дохода, %</label>
+      <div class="two"><input class="num" id="savePct" type="number" inputmode="numeric" min="0" max="100" step="1"><input id="saveWallet" type="text" placeholder="куда: например, Копилка" autocomplete="off"></div>
+      <div class="note-sm">Обычно 20–40 %. После записи дохода приложение покажет, сколько перевести на другой кошелёк, и будет напоминать, пока не нажмёшь «Отложил».</div>
+    </div>
+    <div class="fld">
       <label>Бюджет на месяц (0 — не показывать)</label>
       <div class="two"><input class="num" id="budgetAmt" type="number" inputmode="decimal" min="0" step="any"><select id="budgetCur"><option value="VND">₫</option><option value="USD">$</option><option value="RUB">₽</option></select></div>
     </div>
@@ -318,7 +338,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
         </div>
       </details>
     </div>
-    <div class="note-sm">Расходник v2</div>
+    <div class="note-sm">Расходник v3</div>
   </div>
 </dialog>
 <script>
@@ -367,7 +387,7 @@ function catOf(x){ return x.type==='inc' ? INCOME_CAT : (CAT_BY_ID[x.cat]||CAT_B
 const state = {
   entries:[], learned:{},
   settings:{ rates:{RUB:84.34, VND:25984}, ratesUpdated:'2026-09-15', ratesFetched:0, ratesSource:'', autoRates:true, rateSource:'auto',
-             defaultCur:'VND', budget:{amount:0, cur:'VND', updated:0}, lastBackup:0, backupRemind:true,
+             defaultCur:'VND', budget:{amount:0, cur:'VND', updated:0}, savePct:30, saveWallet:'', lastBackup:0, backupRemind:true,
              gh:{token:'', repo:'rashodnik-data', owner:'', lastSync:0} },
   viewCur:'VND', mode:'week', anchor:null, editing:null, search:'', openRow:null, dirty:false,
 };
@@ -454,6 +474,7 @@ function parseInput(text, defCur){
     }
     // хвост из резервной копии: {курс_руб;курс_донг} и [категория]
     let rate=null, catTag=null, body=line;
+    let saveTag=null; const st=body.match(/\s*<(\d{1,3})\|([01])>\s*$/); if(st){ saveTag={pct:Number(st[1]), done:st[2]==='1'}; body=body.slice(0,st.index).trim(); }
     const rt=body.match(/\s*\{([\d.]+);([\d.]+)\}\s*$/); if(rt){ const R=Number(rt[1]),V=Number(rt[2]); if(R>0&&V>0) rate={RUB:R,VND:V}; body=body.slice(0,rt.index).trim(); }
     const ct=body.match(/\s*\[([a-z]+)\]\s*$/); if(ct){ catTag=ct[1]; body=body.slice(0,ct.index).trim(); }
     let m=body.match(AMT_RE), note;
@@ -467,6 +488,7 @@ function parseInput(text, defCur){
     if(!isFinite(amount)||amount<=0){ bad.push(line); continue; }
     note=(note||'').trim();
     const ent={date, amount, cur, note, type};
+    if(type==='inc'){ ent.savePct = saveTag? saveTag.pct : (state.settings.savePct||0); ent.saved = saveTag? saveTag.done : false; }
     ent.cat = type==='inc' ? 'income' : ((catTag && CAT_BY_ID[catTag]) ? catTag : guessCat(note));
     if(rate) ent.rate=rate;
     out.push(ent);
@@ -550,6 +572,11 @@ function restoreEntry(id){ const e=findEntry(id); if(e){ delete e.del; e.updated
 function updateEntry(id, patch){ const e=findEntry(id); if(!e) return; Object.assign(e,patch); e.updated=Date.now(); persist(); }
 function learnCat(note, cat){ const k=normNote(note); if(!k) return; state.learned[k]=cat; }
 function entriesIn(s,e){ return live().filter(x=>x.date>=s && x.date<=e); }
+function saveAmt(x){ return x.amount*((x.savePct||0)/100); }
+function savePending(){ return live().filter(x=>x.type==='inc' && (x.savePct||0)>0 && !x.saved); }
+function saveDone(){ return live().filter(x=>x.type==='inc' && (x.savePct||0)>0 && x.saved); }
+function sumSave(list,cur){ cur=cur||state.viewCur; return list.reduce((a,x)=>a+convert(saveAmt(x),x.cur,cur,x.rate),0); }
+function markSaved(id,val){ const e=findEntry(id); if(e){ e.saved=val; e.savedTs=val?Date.now():0; e.updated=Date.now(); persist(); } }
 function expOf(list){ return list.filter(x=>x.type!=='inc'); }
 function incOf(list){ return list.filter(x=>x.type==='inc'); }
 function sumIn(list,cur){ cur=cur||state.viewCur; return list.reduce((a,x)=>a+conv(x,cur),0); }
@@ -567,7 +594,7 @@ function render(){
   document.querySelectorAll('#curSeg button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.cur===state.viewCur)));
   document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.mode===state.mode)));
   $('#defCurHint').textContent=CUR[state.settings.defaultCur].name;
-  renderChips(); renderBanner();
+  renderChips(); renderBanner(); renderSavings();
   if(state.search){ renderSearch(); return; }
   $('#analytics').hidden = state.mode!=='month';
   const [s,e]=periodRange();
@@ -644,6 +671,7 @@ function renderAnalytics(exp){
   const rows=Object.entries(by).sort((a,b)=>b[1]-a[1]);
   const top=[...exp].sort((a,b)=>conv(b,state.viewCur)-conv(a,state.viewCur)).slice(0,5);
   el.innerHTML=`<h3>По категориям <span>${exp.length} записей</span></h3><div class="cats">${rows.map(([id,v])=>{ const c=CAT_BY_ID[id]||CAT_BY_ID.other; const p=v/total*100; return `<button type="button" class="catrow" data-cat="${id}"><span class="cat">${c.ico}</span><span class="t"><span>${c.name}</span><span class="num">${fmtMoney(v,state.viewCur)} <span class="pct">${p<1?'<1':Math.round(p)}%</span></span></span><span class="bar" style="grid-column:2/4"><i style="width:${Math.max(1,p)}%"></i></span></button>`; }).join('')}</div>
+  ${(()=>{ const [ms,me]=periodRange(); const inc=incOf(entriesIn(ms,me)).filter(x=>x.savePct>0); if(!inc.length) return ''; const plan=sumSave(inc), done=sumSave(inc.filter(x=>x.saved)); return `<div class="compare" style="margin-top:12px">Копилка за месяц: отложено <b class="num">${fmtMoney(done,state.viewCur)}</b> из <span class="num">${fmtMoney(plan,state.viewCur)}</span> по плану${done<plan?` — ещё <b class="num">${fmtMoney(plan-done,state.viewCur)}</b>`:' ✓'}.</div>`; })()}
   <div class="topl"><h3>Самые крупные <span>топ-5</span></h3>${top.map(x=>`<div class="p"><span class="n">${catChip(x)}${fmtDayShort(x.date)} · ${x.note?esc(x.note):'без описания'}</span><span class="num">${fmtMoney(conv(x,state.viewCur),state.viewCur)}</span></div>`).join('')}</div>`;
   el.querySelectorAll('.catrow').forEach(b=>b.addEventListener('click',()=>{ const c=CAT_BY_ID[b.dataset.cat]; openSearch('#'+c.id); }));
 }
@@ -656,6 +684,21 @@ function renderChips(){
   box.innerHTML=top.map(g=>{ const [ak]=Object.entries(g.amts).sort((a,b)=>b[1]-a[1])[0]; const [cur,amt]=ak.split('|'); const line=`-${fmtAmtShort(Number(amt),cur)} ${g.note}`; return `<button type="button" data-line="${esc(line)}">${catOf({cat:guessCat(g.note)}).ico} ${esc(g.note)} <span class="num" style="color:var(--muted)">${fmtAmtShort(Number(amt),cur)}</span></button>`; }).join('');
 }
 $('#chips').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const ta=$('#input'); ta.value=(ta.value.trim()? ta.value.replace(/\s*$/,'')+'\n':'')+b.dataset.line; updatePreview(); ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); });
+function renderSavings(){
+  const el=$('#savings'); const pend=savePending().sort((a,b)=>a.date<b.date?1:-1), done=saveDone();
+  if(!pend.length && !done.length){ el.hidden=true; return; }
+  el.hidden=false; el.classList.toggle('done',!pend.length);
+  const wallet=state.settings.saveWallet? ' → '+esc(state.settings.saveWallet) : ' на другой кошелёк';
+  const [ms,me]=monthRange(today()); const [ys]=[today().slice(0,4)+'-01-01'];
+  const doneMonth=done.filter(x=>x.date>=ms&&x.date<=me), doneYear=done.filter(x=>x.date>=ys);
+  let html = pend.length
+    ? `<h3>Отложить${wallet} <span>${pend.length===1?'1 доход':pend.length+' дохода'}</span></h3><div class="due num">${fmtMoney(sumSave(pend),state.viewCur)}<small>${Object.keys(CUR).filter(c=>c!==state.viewCur).map(c=>fmtMoney(sumSave(pend,c),c)).join(' · ')}</small></div>
+       <div class="items">${pend.map(x=>`<div class="it"><div class="l"><span class="num">${fmtMoney(saveAmt(x),x.cur)}</span> — ${x.savePct}% от ${fmtMoney(x.amount,x.cur)}<small>${fmtDayShort(x.date)} · ${x.note?esc(x.note):'доход'}</small></div><button type="button" class="primary" data-saved="${x.id}">Отложил ✓</button></div>`).join('')}</div>`
+    : `<h3>Копилка${wallet} <span>всё отложено</span></h3><div class="due num">✓ ${fmtMoney(sumSave(doneMonth),state.viewCur)}<small>отложено в этом месяце</small></div>`;
+  html += `<div class="stats"><span>всего отложено <b class="num">${fmtMoney(sumSave(done),state.viewCur)}</b></span><span>за ${today().slice(0,4)} год <b class="num">${fmtMoney(sumSave(doneYear),state.viewCur)}</b></span><span>норма <b>${state.settings.savePct||0}%</b></span></div>`;
+  el.innerHTML=html;
+  el.querySelectorAll('[data-saved]').forEach(b=>b.addEventListener('click',()=>{ const id=b.dataset.saved; const x=findEntry(id); markSaved(id,true); render(); toast(`Отложено ${fmtMoney(saveAmt(x),x.cur)}`,'Вернуть',()=>{ markSaved(id,false); render(); }); }));
+}
 function renderBanner(){
   const s=state.settings, el=$('#backupBanner');
   const n=live().length; const age=(Date.now()-(s.lastBackup||0))/86400000;
@@ -705,11 +748,12 @@ function editForm(x){
   <input id="e-note" type="text" value="${esc(x.note)}" placeholder="описание" aria-label="Описание">
   <input id="e-date" type="date" value="${x.date}" aria-label="Дата">
   <div class="catpick" id="e-cats">${cats.map(c=>`<button type="button" data-cat="${c.id}" aria-pressed="${(x.cat||'other')===c.id}">${c.ico} ${c.name}</button>`).join('')}</div>
+  <div class="ratebox" id="e-save" ${x.type==='inc'?'':'hidden'}><label style="display:flex;gap:6px;align-items:center">Откладывать <input class="num" id="e-pct" type="number" min="0" max="100" style="width:70px;height:30px" value="${x.savePct==null?(state.settings.savePct||0):x.savePct}"> %</label><label class="chk" style="margin:0"><input type="checkbox" id="e-saved" ${x.saved?'checked':''}> уже отложено</label></div>
   <div class="ratebox"><span class="num">${x.rate? 'Курс на момент записи: '+fmtRate(x.rate) : 'Курс не зафиксирован — считается по текущему'}</span><button type="button" class="ghost" id="e-rate">${x.rate?'Заменить текущим':'Зафиксировать текущий'}</button></div>
   <div class="l3"><button type="button" class="ghost danger" id="e-del">Удалить</button><span style="display:flex;gap:8px"><button type="button" class="ghost" id="e-cancel">Отмена</button><button type="submit" class="primary" style="height:36px">Сохранить</button></span></div>`;
   let cat=x.cat||'other';
   f.querySelector('#e-cats').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; cat=b.dataset.cat; f.querySelectorAll('#e-cats button').forEach(q=>q.setAttribute('aria-pressed',String(q===b))); });
-  f.querySelector('#e-type').addEventListener('change',()=>{ const inc=f.querySelector('#e-type').value==='inc'; const list=inc?[INCOME_CAT]:CATS; cat=inc?'income':guessCat(f.querySelector('#e-note').value); f.querySelector('#e-cats').innerHTML=list.map(c=>`<button type="button" data-cat="${c.id}" aria-pressed="${cat===c.id}">${c.ico} ${c.name}</button>`).join(''); });
+  f.querySelector('#e-type').addEventListener('change',()=>{ const inc=f.querySelector('#e-type').value==='inc'; f.querySelector('#e-save').hidden=!inc; const list=inc?[INCOME_CAT]:CATS; cat=inc?'income':guessCat(f.querySelector('#e-note').value); f.querySelector('#e-cats').innerHTML=list.map(c=>`<button type="button" data-cat="${c.id}" aria-pressed="${cat===c.id}">${c.ico} ${c.name}</button>`).join(''); });
   f.querySelector('#e-cancel').addEventListener('click',()=>{ state.editing=null; render(); });
   f.querySelector('#e-rate').addEventListener('click',()=>{ updateEntry(x.id,{rate:{...state.settings.rates}}); render(); toast('Курс обновлён: '+fmtRate(state.settings.rates)); });
   f.querySelector('#e-del').addEventListener('click',()=>{ state.editing=null; removeEntry(x.id); render(); toast('Удалено','Вернуть',()=>{ restoreEntry(x.id); render(); }); });
@@ -718,7 +762,9 @@ function editForm(x){
     if(!isFinite(amount)||amount<=0){ toast('Сумма не распознана'); return; }
     const date=f.querySelector('#e-date').value||x.date; const type=f.querySelector('#e-type').value; const note=f.querySelector('#e-note').value.trim();
     if(type!=='inc' && cat!==x.cat) learnCat(note,cat);
-    state.editing=null; updateEntry(x.id,{amount,cur,note,date,type,cat:type==='inc'?'income':cat}); render(); toast('Сохранено');
+    const patch={amount,cur,note,date,type,cat:type==='inc'?'income':cat};
+    if(type==='inc'){ patch.savePct=Math.max(0,Math.min(100,Number(f.querySelector('#e-pct').value)||0)); patch.saved=f.querySelector('#e-saved').checked; }
+    state.editing=null; updateEntry(x.id,patch); render(); toast('Сохранено');
   });
   return f;
 }
@@ -765,7 +811,10 @@ $('#saveBtn').addEventListener('click',async()=>{
   const last=entries[entries.length-1].date;
   if(state.search) closeSearch();
   if(state.mode==='day') state.anchor=last; else if(last<periodRange()[0]||last>periodRange()[1]) state.anchor=last;
-  render(); toast((entries.length===1?'Записано':`Записано: ${entries.length}`)+' · '+fmtRate(entries[entries.length-1].rate||state.settings.rates));
+  const incs=entries.filter(e=>e.type==='inc' && e.savePct>0 && !e.saved);
+  render();
+  if(incs.length){ const c=incs[0].cur; toast(`Записано · отложи ${fmtMoney(incs.reduce((a,e)=>a+convert(saveAmt(e),e.cur,c,e.rate),0),c)}${state.settings.saveWallet?' → '+state.settings.saveWallet:' на другой кошелёк'}`); }
+  else toast((entries.length===1?'Записано':`Записано: ${entries.length}`)+' · '+fmtRate(entries[entries.length-1].rate||state.settings.rates));
 });
 
 /* ---------- управление ---------- */
@@ -785,6 +834,7 @@ function fillSettings(){
   $('#ratesSrc').textContent=s.ratesSource?' · '+s.ratesSource:' · вручную';
   $('#autoRates').checked=s.autoRates!==false; $('#rateSource').value=s.rateSource||'auto';
   $('#defCur').value=s.defaultCur; $('#budgetAmt').value=s.budget.amount||''; $('#budgetCur').value=s.budget.cur||'VND';
+  $('#savePct').value=s.savePct==null?30:s.savePct; $('#saveWallet').value=s.saveWallet||'';
   $('#ghToken').value=s.gh.token||''; $('#ghRepo').value=s.gh.repo||'rashodnik-data';
   $('#syncNow').hidden=!s.gh.token; $('#syncOff').hidden=!s.gh.token;
   $('#syncNote').textContent = s.gh.token ? (s.gh.lastSync? `Подключено: ${s.gh.owner}/${s.gh.repo}. Последняя синхронизация ${fmtDayShort(ymd(new Date(s.gh.lastSync)))} ${fmtTime(s.gh.lastSync)}.` : 'Токен сохранён, синхронизация ещё не выполнялась.') : 'Не подключено. Данные только на этом устройстве.';
@@ -800,6 +850,7 @@ $('#saveSettings').addEventListener('click',()=>{
   if(!(r>0&&v>0)){ toast('Курсы должны быть больше нуля'); return; }
   if(r!==s.rates.RUB || v!==s.rates.VND){ s.rates={RUB:r,VND:v}; s.ratesUpdated=today(); s.ratesSource=''; }
   s.autoRates=$('#autoRates').checked; s.rateSource=$('#rateSource').value; s.defaultCur=$('#defCur').value;
+  s.savePct=Math.max(0,Math.min(100,Number($('#savePct').value)||0)); s.saveWallet=$('#saveWallet').value.trim();
   const ba=Number($('#budgetAmt').value)||0, bc=$('#budgetCur').value;
   if(ba!==s.budget.amount || bc!==s.budget.cur) s.budget={amount:ba,cur:bc,updated:Date.now()};
   s.backupRemind=$('#backupRemind').checked;
@@ -812,13 +863,13 @@ function exportText(){
   const byDay={}; live().forEach(x=>(byDay[x.date] ||= []).push(x));
   return Object.keys(byDay).sort().map(d=>{
     const dd=parseYmd(d); const head=String(dd.getDate()).padStart(2,'0')+'.'+String(dd.getMonth()+1).padStart(2,'0')+'.'+dd.getFullYear();
-    return head+'\n'+byDay[d].sort((a,b)=>(a.ts||0)-(b.ts||0)).map(x=>`${x.type==='inc'?'+':'-'}${x.cur==='VND'?Math.round(x.amount):x.amount}${CUR[x.cur].sym}${x.note?' - '+x.note:''}${x.type!=='inc'&&x.cat&&x.cat!=='other'?` [${x.cat}]`:''}${x.rate?` {${x.rate.RUB};${x.rate.VND}}`:''}`).join('\n');
+    return head+'\n'+byDay[d].sort((a,b)=>(a.ts||0)-(b.ts||0)).map(x=>`${x.type==='inc'?'+':'-'}${x.cur==='VND'?Math.round(x.amount):x.amount}${CUR[x.cur].sym}${x.note?' - '+x.note:''}${x.type!=='inc'&&x.cat&&x.cat!=='other'?` [${x.cat}]`:''}${x.rate?` {${x.rate.RUB};${x.rate.VND}}`:''}${x.type==='inc'&&x.savePct>0?` <${x.savePct}|${x.saved?1:0}>`:''}`).join('\n');
   }).join('\n\n');
 }
 function csvText(){
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const head=['Дата','Тип','Сумма','Валюта','Категория','Описание','Курс ₽ за $','Курс ₫ за $','В донгах','В долларах','В рублях'];
-  const rows=live().sort((a,b)=>a.date===b.date?(a.ts||0)-(b.ts||0):(a.date<b.date?-1:1)).map(x=>[x.date, x.type==='inc'?'доход':'расход', String(x.amount).replace('.',','), x.cur, catOf(x).name, x.note, x.rate?String(x.rate.RUB).replace('.',','):'', x.rate?x.rate.VND:'', Math.round(conv(x,'VND')), String(Math.round(conv(x,'USD')*100)/100).replace('.',','), String(Math.round(conv(x,'RUB')*100)/100).replace('.',',')]);
+  const head=['Дата','Тип','Сумма','Валюта','Категория','Описание','Курс ₽ за $','Курс ₫ за $','В донгах','В долларах','В рублях','Отложить %','Отложить сумма','Отложено'];
+  const rows=live().sort((a,b)=>a.date===b.date?(a.ts||0)-(b.ts||0):(a.date<b.date?-1:1)).map(x=>[x.date, x.type==='inc'?'доход':'расход', String(x.amount).replace('.',','), x.cur, catOf(x).name, x.note, x.rate?String(x.rate.RUB).replace('.',','):'', x.rate?x.rate.VND:'', Math.round(conv(x,'VND')), String(Math.round(conv(x,'USD')*100)/100).replace('.',','), String(Math.round(conv(x,'RUB')*100)/100).replace('.',','), x.type==='inc'?(x.savePct||0):'', x.type==='inc'&&x.savePct>0?String(Math.round(saveAmt(x)*100)/100).replace('.',','):'', x.type==='inc'&&x.savePct>0?(x.saved?'да':'нет'):'']);
   return '﻿'+[head,...rows].map(r=>r.map(q).join(';')).join('\r\n');
 }
 async function saveFile(name, content, mime){
@@ -879,7 +930,7 @@ async function syncNow(manual){
     const merged=mergeData({entries:state.entries, learned:state.learned, budget:state.settings.budget}, remote);
     state.entries=merged.entries; state.learned=merged.learned; state.settings.budget=merged.budget;
     if(snapshotForSync(merged)!==snapshotForSync(remote)){
-      const body={message:'rashodnik sync '+new Date().toISOString(), content:b64enc(JSON.stringify({...merged, version:2, savedAt:Date.now()}))}; if(sha) body.sha=sha;
+      const body={message:'rashodnik sync '+new Date().toISOString(), content:b64enc(JSON.stringify({...merged, version:3, savedAt:Date.now()}))}; if(sha) body.sha=sha;
       const p=await fetch(path,{method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(p.status===409 || p.status===422){ syncing=false; return syncNow(manual); } // кто-то записал раньше — повторяем с новым sha
       if(p.status===401) throw {code:'auth'}; if(p.status===404) throw {code:'norepo'}; if(!p.ok) throw {code:'http',status:p.status};
