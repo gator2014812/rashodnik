@@ -294,6 +294,8 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
         </select>
         <button class="ghost" id="refreshRates">Обновить</button>
       </div>
+      <div class="btns"><button class="ghost" id="diagRates">Проверить источники</button></div>
+      <pre class="note-sm" id="diagOut" style="white-space:pre-wrap;margin:0" hidden></pre>
     </div>
 
     <div class="fld">
@@ -338,7 +340,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
         </div>
       </details>
     </div>
-    <div class="note-sm">Расходник v3</div>
+    <div class="note-sm">Расходник v3.1</div>
   </div>
 </dialog>
 <script>
@@ -521,12 +523,14 @@ function persist(){ saveLocal(); scheduleSync(); }
 const SRC = {
   erapi: async ()=>{ const j=await (await fetch('https://open.er-api.com/v6/latest/USD',{cache:'no-store'})).json(); if(j.result!=='success'||!j.rates||!j.rates.RUB||!j.rates.VND) throw new Error('bad'); return {RUB:j.rates.RUB, VND:j.rates.VND, src:'open.er-api.com'}; },
   capi:  async ()=>{ const j=await (await fetch('https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.min.json',{cache:'no-store'})).json(); if(!j.usd||!j.usd.rub||!j.usd.vnd) throw new Error('bad'); return {RUB:j.usd.rub, VND:j.usd.vnd, src:'currency-api'}; },
+  erapi2: async ()=>{ const j=await (await fetch('https://api.exchangerate-api.com/v4/latest/USD',{cache:'no-store'})).json(); if(!j.rates||!j.rates.RUB||!j.rates.VND) throw new Error('bad'); return {RUB:j.rates.RUB, VND:j.rates.VND, src:'exchangerate-api'}; },
+  capi2: async ()=>{ const j=await (await fetch('https://latest.currency-api.pages.dev/v1/currencies/usd.min.json',{cache:'no-store'})).json(); if(!j.usd||!j.usd.rub||!j.usd.vnd) throw new Error('bad'); return {RUB:j.usd.rub, VND:j.usd.vnd, src:'currency-api (cf)'}; },
   cbr:   async ()=>{ const j=await (await fetch('https://www.cbr-xml-daily.ru/daily_json.js',{cache:'no-store'})).json(); const u=j.Valute&&j.Valute.USD, v=j.Valute&&j.Valute.VND; if(!u||!v) throw new Error('bad');
            const rub=u.Value/u.Nominal; const rubPerVnd=v.Value/v.Nominal; return {RUB:rub, VND:rub/rubPerVnd, src:'ЦБ РФ'}; },
 };
 async function getRatesFromSources(){
   const pref=state.settings.rateSource||'auto';
-  const chain = pref==='cbr' ? [SRC.cbr, SRC.erapi, SRC.capi] : pref==='currency-api' ? [SRC.capi, SRC.erapi] : [SRC.erapi, SRC.capi];
+  const chain = pref==='cbr' ? [SRC.cbr, SRC.erapi, SRC.capi, SRC.erapi2, SRC.capi2] : pref==='currency-api' ? [SRC.capi, SRC.capi2, SRC.erapi, SRC.erapi2] : [SRC.erapi, SRC.capi, SRC.erapi2, SRC.capi2];
   let lastErr; for(const f of chain){ try{ return await withTimeout(f(),8000); }catch(e){ lastErr=e; } } throw lastErr||new Error('no source');
 }
 function withTimeout(p,ms){ return Promise.race([p, new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]); }
@@ -539,7 +543,12 @@ async function fetchRates(force){
     const r=await getRatesFromSources();
     s.rates={RUB:Math.round(r.RUB*100)/100, VND:Math.round(r.VND)}; s.ratesUpdated=today(); s.ratesFetched=Date.now(); s.ratesSource=r.src;
     saveLocal(); setRatesLine(); render(); return true;
-  }catch(e){ console.warn('rates',e); setRatesLine('нет связи'); return false; }
+  }catch(e){ console.warn('rates',e); s.ratesError=(e&&e.message)||String(e); setRatesLine('нет связи'); return false; }
+}
+async function diagnoseSources(){
+  const names={erapi:'open.er-api.com',capi:'currency-api (jsdelivr)',erapi2:'exchangerate-api.com',capi2:'currency-api (cloudflare)',cbr:'ЦБ РФ (cbr-xml-daily.ru)'};
+  const out=[]; for(const k of Object.keys(SRC)){ const t0=Date.now(); try{ const r=await withTimeout(SRC[k](),8000); out.push(`✅ ${names[k]}: 1$ = ${Math.round(r.RUB*100)/100} ₽, ${Math.round(r.VND)} ₫ (${Date.now()-t0} мс)`); }catch(e){ out.push(`❌ ${names[k]}: ${(e&&e.message)||e}`); } }
+  return out.join('\n');
 }
 function histCache(){ try{ return JSON.parse(localStorage.getItem(HIST_KEY)||'{}'); }catch(e){ return {}; } }
 async function ratesForDate(date){
@@ -831,7 +840,7 @@ function fillSettings(){
   const s=state.settings;
   $('#rateRUB').value=s.rates.RUB; $('#rateVND').value=s.rates.VND;
   $('#ratesUpdated').textContent=s.ratesUpdated? fmtDayShort(s.ratesUpdated)+'.'+s.ratesUpdated.slice(0,4) : '—';
-  $('#ratesSrc').textContent=s.ratesSource?' · '+s.ratesSource:' · вручную';
+  $('#ratesSrc').textContent=(s.ratesSource?' · '+s.ratesSource:' · вручную')+(s.ratesError&&!s.ratesSource?' · ошибка: '+s.ratesError:'');
   $('#autoRates').checked=s.autoRates!==false; $('#rateSource').value=s.rateSource||'auto';
   $('#defCur').value=s.defaultCur; $('#budgetAmt').value=s.budget.amount||''; $('#budgetCur').value=s.budget.cur||'VND';
   $('#savePct').value=s.savePct==null?30:s.savePct; $('#saveWallet').value=s.saveWallet||'';
@@ -856,7 +865,8 @@ $('#saveSettings').addEventListener('click',()=>{
   s.backupRemind=$('#backupRemind').checked;
   persist(); dlg.close(); setRatesLine(); render(); toast('Настройки сохранены');
 });
-$('#refreshRates').addEventListener('click',async()=>{ state.settings.rateSource=$('#rateSource').value; $('#refreshRates').disabled=true; const ok=await fetchRates(true); $('#refreshRates').disabled=false; if(ok){ fillSettings(); toast('Курсы обновлены: '+fmtRate(state.settings.rates)); } else toast('Не удалось получить курсы — проверь интернет'); });
+$('#diagRates').addEventListener('click',async()=>{ const o=$('#diagOut'); o.hidden=false; o.textContent='Проверяю… (до 40 секунд)'; o.textContent=`Онлайн: ${navigator.onLine?'да':'нет'} · ${navigator.userAgent.slice(0,60)}…\n`+await diagnoseSources(); });
+$('#refreshRates').addEventListener('click',async()=>{ state.settings.rateSource=$('#rateSource').value; $('#refreshRates').disabled=true; const ok=await fetchRates(true); $('#refreshRates').disabled=false; if(ok){ fillSettings(); toast('Курсы обновлены: '+fmtRate(state.settings.rates)); } else toast('Не удалось получить курсы: '+(state.settings.ratesError||'нет связи')); });
 
 /* ---------- резервные копии ---------- */
 function exportText(){
