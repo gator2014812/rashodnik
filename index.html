@@ -395,7 +395,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
       <div class="note-sm">Укажи, сколько денег у тебя сейчас на руках и на карте по каждой валюте. Дальше приложение считает остаток само, а кнопка «Сверить» на главном экране раз в несколько дней помогает найти незаписанные траты.</div>
       <div class="btns"><button class="ghost" id="openRecon">Остатки и сверка</button><button class="ghost" id="clearBal">Сбросить остатки</button></div>
     </div>
-    <div class="note-sm">Расходник v4</div>
+    <div class="note-sm">Расходник v4.1</div>
   </div>
 </dialog>
 
@@ -675,6 +675,12 @@ function balanceOf(cur){
   for(const x of live()){ if(x.cur!==cur || (x.ts||0)<=b.ts) continue;
     if(x.type==='inc') v+=x.amount; else if(x.type==='xfer') v+= x.dir==='in'? x.amount : -x.amount; else v-=x.amount; }
   return v;
+}
+function sinceAnchor(cur){
+  const b=(state.settings.balances||{})[cur]; if(!b) return null; let exp=0,inc=0,xin=0,xout=0,n=0;
+  for(const x of live()){ if(x.cur!==cur || (x.ts||0)<=b.ts) continue; n++;
+    if(x.type==='inc') inc+=x.amount; else if(x.type==='xfer'){ if(x.dir==='in') xin+=x.amount; else xout+=x.amount; } else exp+=x.amount; }
+  return {start:b.amount, date:b.date, exp, inc, xin, xout, n, calc:b.amount-exp+inc+xin-xout};
 }
 function setAnchor(cur, amount){ (state.settings.balances ||= {})[cur]={amount, ts:Date.now(), date:today()}; }
 function saveAmt(x){ return x.amount*((x.savePct||0)/100); }
@@ -1132,8 +1138,10 @@ const recon=$('#reconDlg'); let reconSetup=false;
 function openRecon(setup){
   reconSetup=setup; const bals=state.settings.balances||{};
   $('#reconTitle').firstChild.textContent = setup? 'Остатки на руках ' : 'Сверка ';
-  $('#reconHint').textContent = setup ? 'Впиши, сколько денег у тебя сейчас по каждой валюте (наличные + карта). Пустое поле — валюту не отслеживать.' : 'Впиши, сколько денег у тебя сейчас на самом деле. Разницу с расчётом приложение запишет одной строкой, чтобы всё снова сходилось.';
-  $('#reconRows').innerHTML=Object.keys(CUR).map(c=>{ const calc=balanceOf(c); return `<div class="cur"><b>${CUR[c].sym}</b><input class="num" data-cur="${c}" type="text" inputmode="decimal" placeholder="${setup?'сейчас на руках':(calc==null?'не отслеживается':'на самом деле')}" ${(!setup&&calc==null)?'disabled':''}><span class="calc">${calc==null?'':'по расчёту '+fmtMoney(calc,c)}</span></div>`; }).join('');
+  $('#reconHint').textContent = setup ? 'Впиши, сколько денег у тебя сейчас по каждой валюте (наличные + карта). Пустое поле — валюту не отслеживать.' : 'Посчитай, сколько денег у тебя сейчас на самом деле, и впиши. Если сумма отличается от «должно быть» — разница и есть незаписанные траты, приложение добавит их одной строкой.';
+  $('#reconRows').innerHTML=Object.keys(CUR).map(c=>{ const si=sinceAnchor(c); const calc=si?si.calc:null;
+    const br = (!setup&&si) ? `<div class="note-sm" style="grid-column:2/4;margin-top:-4px">${si.n===0?`с ${fmtDayShort(si.date)} записей в ${CUR[c].sym} не было — сверять пока нечего`:`было ${fmtMoney(si.start,c)} (${fmtDayShort(si.date)})${si.exp?` − траты ${fmtMoney(si.exp,c)}`:''}${si.inc?` + доходы ${fmtMoney(si.inc,c)}`:''}${si.xin?` + обмен ${fmtMoney(si.xin,c)}`:''}${si.xout?` − обмен ${fmtMoney(si.xout,c)}`:''} = <b>${fmtMoney(calc,c)}</b>`}</div>` : '';
+    return `<div class="cur"><b>${CUR[c].sym}</b><input class="num" data-cur="${c}" type="text" inputmode="decimal" placeholder="${setup?'сейчас на руках':(calc==null?'не отслеживается':'сколько сейчас')}" ${(!setup&&calc==null)?'disabled':''}><span class="calc">${calc==null?'':'должно быть '+fmtMoney(calc,c)}</span>${br}</div>`; }).join('');
   $('#reconDiffs').innerHTML=''; $('#reconXferWrap').hidden=true; $('#reconXfer').checked=false;
   $('#reconRows').querySelectorAll('input').forEach(i=>i.addEventListener('input',reconPreview));
   if(setup) $('#reconRows').querySelectorAll('input').forEach(i=>{ if(bals[i.dataset.cur]) i.value=Math.round(balanceOf(i.dataset.cur)*100)/100; });
