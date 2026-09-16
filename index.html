@@ -277,7 +277,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
     <div id="preview" class="preview" hidden></div>
     <div class="chips" id="chips"></div>
     <div class="row">
-      <div class="hint">Дата строкой <b>дд.мм</b> — для прошлых дней. Без знака валюты — <b id="defCurHint">донги</b>; <b>k</b> = тысяча; <b>+</b> в начале — доход (приложение посчитает, сколько отложить).</div>
+      <div class="hint">Дата строкой <b>дд.мм</b> — для прошлых дней. Без знака валюты — <b id="defCurHint">донги</b>; <b>k</b> = тысяча; <b>+</b> в начале — доход. Время ставится само; своё — <b>21:30 -45k кофе</b>.</div>
       <button class="primary" id="saveBtn" disabled>Записать</button>
     </div>
     </div>
@@ -395,7 +395,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
       <div class="note-sm">Укажи, сколько денег у тебя сейчас на руках и на карте по каждой валюте. Дальше приложение считает остаток само, а кнопка «Сверить» на главном экране раз в несколько дней помогает найти незаписанные траты.</div>
       <div class="btns"><button class="ghost" id="openRecon">Остатки и сверка</button><button class="ghost" id="clearBal">Сбросить остатки</button></div>
     </div>
-    <div class="note-sm">Расходник v4.1</div>
+    <div class="note-sm">Расходник v4.2</div>
   </div>
 </dialog>
 
@@ -488,6 +488,9 @@ const MONTHS_PREP=['январе','феврале','марте','апреле','
 const WD=['вс','пн','вт','ср','чт','пт','сб'];
 function fmtDayLong(s){ const d=parseYmd(s); return d.getDate()+' '+MONTHS_GEN[d.getMonth()]+', '+WD[d.getDay()]; }
 function fmtDayShort(s){ const d=parseYmd(s); return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0'); }
+function nowHM(){ const d=new Date(); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function timeOf(x){ if(x.time) return x.time; if(x.ts && ymd(new Date(x.ts))===x.date) return fmtTime(x.ts); return ''; }
+function timeKey(x){ const t=timeOf(x); return t? t : '99:99'; }
 function fmtTime(ts){ const d=new Date(ts); return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 function periodRange(){
   const a=state.anchor;
@@ -544,7 +547,11 @@ function parseInput(text, defCur){
   const out=[]; const bad=[]; let date=today(); const now=new Date();
   for(const raw of text.split(/\n/)){
     const line=raw.trim(); if(!line) continue;
-    const dm=line.match(DATE_RE);
+    let time=null; let lineT=line;
+    const tm1=lineT.match(/^(\d{1,2}):(\d{2})\s+(.+)$/); if(tm1){ time=String(Number(tm1[1])).padStart(2,'0')+':'+tm1[2]; lineT=tm1[3].trim(); }
+    else { const tm2=lineT.match(/^(.+?)\s+(?:в\s+)?(\d{1,2}):(\d{2})$/); if(tm2 && Number(tm2[2])<24 && Number(tm2[3])<60){ time=String(Number(tm2[2])).padStart(2,'0')+':'+tm2[3]; lineT=tm2[1].trim(); } }
+    if(time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) time=null;
+    const dm=lineT.match(DATE_RE);
     if(dm){
       const y = dm[3]? Number(dm[3].length===2?'20'+dm[3]:dm[3]) : now.getFullYear();
       const d=new Date(y, Number(dm[2])-1, Number(dm[1]));
@@ -553,15 +560,15 @@ function parseInput(text, defCur){
       date=ymd(d); continue;
     }
     // обмен валют: «100$ > 2600k обмен» — ушло слева, пришло справа
-    const xm=line.match(/^(.+?)\s*(?:>|→|->)\s*(.+)$/);
+    const xm=lineT.match(/^(.+?)\s*(?:>|→|->)\s*(.+)$/);
     if(xm){
       const a=xm[1].match(AMT_ANY), rest=xm[2]; const bm=rest.match(AMT_ANY);
       if(a&&bm){ const ca=detectCur(a[4])||defCur, cb=detectCur(bm[4])||defCur; let va=parseNumber(a[2],ca), vb=parseNumber(bm[2],cb); if(a[3]) va*=1000; if(bm[3]) vb*=1000;
         const note=rest.replace(bm[0],'').replace(/^\s*[-–—:;]\s*|\s*[-–—:;]\s*$/g,'').trim()||'обмен';
-        if(va>0&&vb>0){ const pid=uid(); out.push({date,amount:va,cur:ca,note,type:'xfer',dir:'out',cat:'xfer',pair:pid}); out.push({date,amount:vb,cur:cb,note,type:'xfer',dir:'in',cat:'xfer',pair:pid}); continue; } }
+        if(va>0&&vb>0){ const pid=uid(); const t=time||undefined; out.push({date,time:t,amount:va,cur:ca,note,type:'xfer',dir:'out',cat:'xfer',pair:pid}); out.push({date,time:t,amount:vb,cur:cb,note,type:'xfer',dir:'in',cat:'xfer',pair:pid}); continue; } }
     }
     // хвост из резервной копии: {курс_руб;курс_донг} и [категория]
-    let rate=null, catTag=null, body=line;
+    let rate=null, catTag=null, body=lineT;
     let saveTag=null; const st=body.match(/\s*<(\d{1,3})\|([01])>\s*$/); if(st){ saveTag={pct:Number(st[1]), done:st[2]==='1'}; body=body.slice(0,st.index).trim(); }
     const rt=body.match(/\s*\{([\d.]+);([\d.]+)\}\s*$/); if(rt){ const R=Number(rt[1]),V=Number(rt[2]); if(R>0&&V>0) rate={RUB:R,VND:V}; body=body.slice(0,rt.index).trim(); }
     const ct=body.match(/\s*\[([a-z]+)\]\s*$/); if(ct){ catTag=ct[1]; body=body.slice(0,ct.index).trim(); }
@@ -576,7 +583,7 @@ function parseInput(text, defCur){
     if(m[3]) amount*=1000;
     if(!isFinite(amount)||amount<=0){ bad.push(line); continue; }
     note=(note||'').trim();
-    const ent={date, amount, cur, note, type}; if(dir) ent.dir=dir;
+    const ent={date, amount, cur, note, type}; if(dir) ent.dir=dir; if(time) ent.time=time;
     if(type==='inc'){ ent.savePct = saveTag? saveTag.pct : (state.settings.savePct||0); ent.saved = saveTag? saveTag.done : false; }
     ent.cat = type==='inc' ? 'income' : type==='xfer' ? 'xfer' : ((catTag && CAT_BY_ID[catTag]) ? catTag : guessCat(note));
     if(rate) ent.rate=rate;
@@ -659,7 +666,7 @@ async function addEntries(list){
   const byDate={}; for(const e of list){ if(!e.rate) (byDate[e.date] ||= []).push(e); }
   await Promise.all(Object.keys(byDate).map(async d=>{ const r=await ratesForDate(d); byDate[d].forEach(e=>e.rate=r); }));
   const now=Date.now();
-  list.forEach((e,i)=>state.entries.push({id:uid(), ts:now+i, updated:now+i, ...e}));
+  list.forEach((e,i)=>{ if(!e.time && e.date===today()) e.time=nowHM(); state.entries.push({id:uid(), ts:now+i, updated:now+i, ...e}); });
   persist();
 }
 function findEntry(id){ return state.entries.find(e=>e.id===id); }
@@ -712,7 +719,7 @@ function render(){
   $('#periodLabel').textContent=periodLabel();
   $('#toToday').hidden = (s<=today() && e>=today());
   $('#next').disabled = e>=today();
-  const list=entriesIn(s,e).sort((a,b)=> a.date===b.date ? (a.ts||0)-(b.ts||0) : (a.date<b.date?1:-1));
+  const list=entriesIn(s,e).sort((a,b)=> a.date===b.date ? (timeKey(a)===timeKey(b) ? (a.ts||0)-(b.ts||0) : (timeKey(a)<timeKey(b)?-1:1)) : (a.date<b.date?1:-1));
   const exp=expOf(list), inc=incOf(list);
   const total=sumIn(exp);
   $('#total').textContent=fmtMoney(total,state.viewCur);
@@ -867,7 +874,7 @@ function dayCard(d, items, opts){
 function rowEl(x){
   const shown=conv(x,state.viewCur); const inc=x.type==='inc'; const xf=x.type==='xfer';
   const w=document.createElement('div'); w.className='rw';
-  w.innerHTML=`<button type="button" class="del" aria-label="Удалить">Удалить</button><button type="button" class="r">${catChip(x)}<span class="note${x.note?'':' empty'}">${x.note?esc(x.note):'без описания'}<small>${catOf(x).name}</small></span><span class="amt num${inc?' inc':''}${xf?' xfer':''}">${xf?(x.dir==='in'?'⇄ +':'⇄ −'):inc?'+':'−'}${fmtMoney(shown,state.viewCur)}${x.cur!==state.viewCur?`<span class="orig">${fmtMoney(x.amount,x.cur)}</span>`:''}</span></button>`;
+  w.innerHTML=`<button type="button" class="del" aria-label="Удалить">Удалить</button><button type="button" class="r">${catChip(x)}<span class="note${x.note?'':' empty'}">${x.note?esc(x.note):'без описания'}<small>${timeOf(x)?`<span class="num">${timeOf(x)}</span> · `:''}${catOf(x).name}</small></span><span class="amt num${inc?' inc':''}${xf?' xfer':''}">${xf?(x.dir==='in'?'⇄ +':'⇄ −'):inc?'+':'−'}${fmtMoney(shown,state.viewCur)}${x.cur!==state.viewCur?`<span class="orig">${fmtMoney(x.amount,x.cur)}</span>`:''}</span></button>`;
   const r=w.querySelector('.r');
   // свайп влево — удалить
   let sx=0, sy=0, dx=0, drag=false, moved=false;
@@ -892,7 +899,7 @@ function editForm(x){
   const cats = x.type==='inc' ? [INCOME_CAT] : x.type==='xfer' ? [XFER_CAT] : CATS;
   f.innerHTML=`<div class="l1"><input class="num" id="e-amt" type="text" inputmode="decimal" value="${x.amount}" aria-label="Сумма"><select id="e-cur" aria-label="Валюта">${Object.keys(CUR).map(c=>`<option value="${c}"${c===x.cur?' selected':''}>${CUR[c].sym}</option>`).join('')}</select><select id="e-type" aria-label="Тип"><option value="exp"${x.type!=='inc'&&x.type!=='xfer'?' selected':''}>расход</option><option value="inc"${x.type==='inc'?' selected':''}>доход</option><option value="xfer"${x.type==='xfer'?' selected':''}>обмен/перевод</option></select></div>
   <input id="e-note" type="text" value="${esc(x.note)}" placeholder="описание" aria-label="Описание">
-  <input id="e-date" type="date" value="${x.date}" aria-label="Дата">
+  <div style="display:grid;grid-template-columns:1fr 110px;gap:8px"><input id="e-date" type="date" value="${x.date}" aria-label="Дата"><input id="e-time" type="time" value="${timeOf(x)}" aria-label="Время"></div>
   <div class="catpick" id="e-cats">${cats.map(c=>`<button type="button" data-cat="${c.id}" aria-pressed="${(x.cat||'other')===c.id}">${c.ico} ${c.name}</button>`).join('')}</div>
   <div class="ratebox" id="e-save" ${x.type==='inc'?'':'hidden'}><label style="display:flex;gap:6px;align-items:center">Откладывать <input class="num" id="e-pct" type="number" min="0" max="100" style="width:70px;height:30px" value="${x.savePct==null?(state.settings.savePct||0):x.savePct}"> %</label><label class="chk" style="margin:0"><input type="checkbox" id="e-saved" ${x.saved?'checked':''}> уже отложено</label></div>
   <div class="ratebox"><span class="num">${x.rate? 'Курс на момент записи: '+fmtRate(x.rate) : 'Курс не зафиксирован — считается по текущему'}</span><button type="button" class="ghost" id="e-rate">${x.rate?'Заменить текущим':'Зафиксировать текущий'}</button></div>
@@ -908,7 +915,7 @@ function editForm(x){
     if(!isFinite(amount)||amount<=0){ toast('Сумма не распознана'); return; }
     const date=f.querySelector('#e-date').value||x.date; const type=f.querySelector('#e-type').value; const note=f.querySelector('#e-note').value.trim();
     if(type!=='inc' && cat!==x.cat) learnCat(note,cat);
-    const patch={amount,cur,note,date,type,cat:type==='inc'?'income':type==='xfer'?'xfer':cat}; if(type==='xfer' && !x.dir) patch.dir='out';
+    const patch={amount,cur,note,date,type,cat:type==='inc'?'income':type==='xfer'?'xfer':cat, time:(f.querySelector('#e-time').value||null)}; if(type==='xfer' && !x.dir) patch.dir='out';
     if(type==='inc'){ patch.savePct=Math.max(0,Math.min(100,Number(f.querySelector('#e-pct').value)||0)); patch.saved=f.querySelector('#e-saved').checked; }
     state.editing=null; updateEntry(x.id,patch); render(); toast('Сохранено');
   });
@@ -1010,13 +1017,13 @@ function exportText(){
   const byDay={}; live().forEach(x=>(byDay[x.date] ||= []).push(x));
   return Object.keys(byDay).sort().map(d=>{
     const dd=parseYmd(d); const head=String(dd.getDate()).padStart(2,'0')+'.'+String(dd.getMonth()+1).padStart(2,'0')+'.'+dd.getFullYear();
-    return head+'\n'+byDay[d].sort((a,b)=>(a.ts||0)-(b.ts||0)).map(x=>`${x.type==='xfer'?(x.dir==='in'?'<':'>'):x.type==='inc'?'+':'-'}${x.cur==='VND'?Math.round(x.amount):x.amount}${CUR[x.cur].sym}${x.note?' - '+x.note:''}${x.type!=='inc'&&x.cat&&x.cat!=='other'?` [${x.cat}]`:''}${x.rate?` {${x.rate.RUB};${x.rate.VND}}`:''}${x.type==='inc'&&x.savePct>0?` <${x.savePct}|${x.saved?1:0}>`:''}`).join('\n');
+    return head+'\n'+byDay[d].sort((a,b)=>timeKey(a)===timeKey(b)?(a.ts||0)-(b.ts||0):(timeKey(a)<timeKey(b)?-1:1)).map(x=>`${timeOf(x)?timeOf(x)+' ':''}${x.type==='xfer'?(x.dir==='in'?'<':'>'):x.type==='inc'?'+':'-'}${x.cur==='VND'?Math.round(x.amount):x.amount}${CUR[x.cur].sym}${x.note?' - '+x.note:''}${x.type!=='inc'&&x.cat&&x.cat!=='other'?` [${x.cat}]`:''}${x.rate?` {${x.rate.RUB};${x.rate.VND}}`:''}${x.type==='inc'&&x.savePct>0?` <${x.savePct}|${x.saved?1:0}>`:''}`).join('\n');
   }).join('\n\n');
 }
 function csvText(){
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
-  const head=['Дата','Тип','Сумма','Валюта','Категория','Описание','Курс ₽ за $','Курс ₫ за $','В донгах','В долларах','В рублях','Отложить %','Отложить сумма','Отложено'];
-  const rows=live().sort((a,b)=>a.date===b.date?(a.ts||0)-(b.ts||0):(a.date<b.date?-1:1)).map(x=>[x.date, x.type==='inc'?'доход':x.type==='xfer'?(x.dir==='in'?'обмен (пришло)':'обмен (ушло)'):'расход', String(x.amount).replace('.',','), x.cur, catOf(x).name, x.note, x.rate?String(x.rate.RUB).replace('.',','):'', x.rate?x.rate.VND:'', Math.round(conv(x,'VND')), String(Math.round(conv(x,'USD')*100)/100).replace('.',','), String(Math.round(conv(x,'RUB')*100)/100).replace('.',','), x.type==='inc'?(x.savePct||0):'', x.type==='inc'&&x.savePct>0?String(Math.round(saveAmt(x)*100)/100).replace('.',','):'', x.type==='inc'&&x.savePct>0?(x.saved?'да':'нет'):'']);
+  const head=['Дата','Время','Тип','Сумма','Валюта','Категория','Описание','Курс ₽ за $','Курс ₫ за $','В донгах','В долларах','В рублях','Отложить %','Отложить сумма','Отложено'];
+  const rows=live().sort((a,b)=>a.date===b.date?(a.ts||0)-(b.ts||0):(a.date<b.date?-1:1)).map(x=>[x.date, timeOf(x), x.type==='inc'?'доход':x.type==='xfer'?(x.dir==='in'?'обмен (пришло)':'обмен (ушло)'):'расход', String(x.amount).replace('.',','), x.cur, catOf(x).name, x.note, x.rate?String(x.rate.RUB).replace('.',','):'', x.rate?x.rate.VND:'', Math.round(conv(x,'VND')), String(Math.round(conv(x,'USD')*100)/100).replace('.',','), String(Math.round(conv(x,'RUB')*100)/100).replace('.',','), x.type==='inc'?(x.savePct||0):'', x.type==='inc'&&x.savePct>0?String(Math.round(saveAmt(x)*100)/100).replace('.',','):'', x.type==='inc'&&x.savePct>0?(x.saved?'да':'нет'):'']);
   return '﻿'+[head,...rows].map(r=>r.map(q).join(';')).join('\r\n');
 }
 async function saveFile(name, content, mime){
