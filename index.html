@@ -85,6 +85,46 @@ button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-vis
 .chips button:active{background:var(--accent-soft)}
 .cat{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;background:var(--accent-soft);font-size:13px;flex:none}
 
+.mode{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.mode .seg button{height:30px;min-width:0;padding:0 12px;font-size:13px}
+.wallets{margin-top:12px;padding:14px}
+.wallets h3{margin:0;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.wallets h3 span{color:var(--muted);font-weight:500;font-size:12.5px}
+.wallets .bal{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}
+.wallets .bal div{font-size:22px;font-weight:600;line-height:1.1}
+.wallets .bal small{display:block;font-size:12px;color:var(--muted);font-weight:500;font-family:var(--sans)}
+.wallets .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.wallets .foot .ghost{height:32px}
+.evening{margin-top:12px;padding:14px}
+.evening h3{margin:0 0 6px;font-size:14px;font-weight:600}
+.evening p{margin:0 0 10px;font-size:13px;color:var(--muted)}
+.evening .list{display:grid;gap:6px}
+.evening label{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--bg);font-size:14px}
+.evening label input{accent-color:var(--accent);width:18px;height:18px}
+.evening label .a{margin-left:auto;color:var(--muted)}
+.evening .row{display:flex;justify-content:space-between;gap:8px;margin-top:10px;flex-wrap:wrap}
+/* лист быстрого ввода */
+.sheet{display:grid;gap:12px;padding:16px}
+.sheet .amt{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.sheet .amt input{height:56px;font-size:30px;font-weight:600;border:1px solid var(--line);border-radius:12px;padding:0 14px;background:var(--bg);width:100%;font-family:var(--mono)}
+.sheet .amt .seg button{height:48px;font-size:18px}
+.sheet .quick{display:flex;gap:6px;flex-wrap:wrap}
+.sheet .quick button{height:34px;padding:0 12px;border-radius:17px;border:1px solid var(--line);background:var(--surface);font-size:14px}
+.sheet .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.sheet .grid button{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:11px;line-height:1.15;color:var(--muted);text-align:center}
+.sheet .grid button i{font-style:normal;font-size:22px}
+.sheet .grid button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.sheet .grid button.income[aria-pressed="true"]{background:var(--income-soft);border-color:var(--income);color:var(--income)}
+.sheet input.note{height:42px;border:1px solid var(--line);border-radius:10px;padding:0 12px;background:var(--bg);width:100%}
+.sheet .foot{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.sheet .foot .primary{height:48px;padding:0 24px;font-size:16px;flex:1}
+.recon .cur{display:grid;grid-template-columns:44px 1fr 1fr;gap:8px;align-items:center;font-size:13px}
+.recon .cur b{font-size:18px}
+.recon .cur input{height:42px;border:1px solid var(--line);border-radius:10px;padding:0 10px;background:var(--bg);width:100%;font-family:var(--mono)}
+.recon .cur .calc{color:var(--muted);font-size:12px}
+.recon .diff{font-size:13px;padding:8px 10px;border-radius:10px;background:var(--bg)}
+.recon .diff.neg b{color:var(--danger)} .recon .diff.pos b{color:var(--income)}
+.r .amt.xfer{color:var(--muted);font-weight:400}
 .savings{margin-top:12px;padding:14px}
 .savings h3{margin:0;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .savings h3 span{color:var(--muted);font-weight:500;font-size:12.5px}
@@ -229,6 +269,8 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
   </header>
 
   <section class="card entry">
+    <div class="mode"><div class="seg" role="group" aria-label="Способ ввода" id="modeSeg"><button data-input="buttons" aria-pressed="false">Кнопками</button><button data-input="text" aria-pressed="true">Текстом</button></div><button class="ghost" id="openSheet" style="height:32px">＋ Добавить</button></div>
+    <div id="textEntry">
     <textarea id="input" placeholder="-45k завтрак
 -15$ такси
 +500$ зарплата"></textarea>
@@ -238,7 +280,15 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
       <div class="hint">Дата строкой <b>дд.мм</b> — для прошлых дней. Без знака валюты — <b id="defCurHint">донги</b>; <b>k</b> = тысяча; <b>+</b> в начале — доход (приложение посчитает, сколько отложить).</div>
       <button class="primary" id="saveBtn" disabled>Записать</button>
     </div>
+    </div>
+    <div id="btnEntry" hidden>
+      <div class="hint" style="margin-bottom:8px">Нажми категорию — откроется ввод суммы.</div>
+      <div class="sheet" style="padding:0"><div class="grid" id="homeGrid"></div></div>
+    </div>
   </section>
+
+  <section class="card wallets" id="wallets" hidden></section>
+  <section class="card evening" id="evening" hidden></section>
 
   <section class="card savings" id="savings" hidden></section>
 
@@ -340,7 +390,34 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--accent);font-weight:
         </div>
       </details>
     </div>
-    <div class="note-sm">Расходник v3.1</div>
+    <div class="sect">
+      <h4>Кошельки и сверка</h4>
+      <div class="note-sm">Укажи, сколько денег у тебя сейчас на руках и на карте по каждой валюте. Дальше приложение считает остаток само, а кнопка «Сверить» на главном экране раз в несколько дней помогает найти незаписанные траты.</div>
+      <div class="btns"><button class="ghost" id="openRecon">Остатки и сверка</button><button class="ghost" id="clearBal">Сбросить остатки</button></div>
+    </div>
+    <div class="note-sm">Расходник v4</div>
+  </div>
+</dialog>
+
+<dialog id="sheetDlg">
+  <form class="sheet" id="sheetForm" method="dialog">
+    <h2 style="margin:0;font-size:17px;display:flex;justify-content:space-between;align-items:center">Новая запись <button type="button" id="sheetClose" aria-label="Закрыть" style="width:32px;height:32px;color:var(--muted)">✕</button></h2>
+    <div class="amt"><input id="sh-amt" type="text" inputmode="decimal" placeholder="0" autocomplete="off" aria-label="Сумма"><div class="seg" id="sh-cur"><button type="button" data-cur="VND" aria-pressed="true">₫</button><button type="button" data-cur="USD" aria-pressed="false">$</button><button type="button" data-cur="RUB" aria-pressed="false">₽</button></div></div>
+    <div class="quick" id="sh-quick"></div>
+    <div class="grid" id="sh-grid"></div>
+    <input class="note" id="sh-note" type="text" placeholder="комментарий (необязательно)" autocomplete="off">
+    <div class="foot"><label class="chk" style="margin:0;white-space:nowrap"><input type="checkbox" id="sh-yday"> вчера</label><button type="submit" class="primary" id="sh-save">Записать</button></div>
+  </form>
+</dialog>
+
+<dialog id="reconDlg">
+  <div class="dlg recon">
+    <h2 id="reconTitle">Сверка <button id="reconClose" aria-label="Закрыть">✕</button></h2>
+    <div class="note-sm" id="reconHint"></div>
+    <div id="reconRows" style="display:grid;gap:10px"></div>
+    <div id="reconDiffs" style="display:grid;gap:6px"></div>
+    <label class="chk" id="reconXferWrap" hidden><input type="checkbox" id="reconXfer"> Это был обмен валют (одна сумма ушла, другая пришла) — записать как обмен, а не как трату и доход</label>
+    <div class="btns"><button class="primary" id="reconSave">Сохранить</button><button class="ghost" id="reconCancel">Отмена</button></div>
   </div>
 </dialog>
 <script>
@@ -374,6 +451,7 @@ const CATS = [
 ];
 const CAT_BY_ID = Object.fromEntries(CATS.map(c=>[c.id,c]));
 const INCOME_CAT = {id:'income', name:'Доход', ico:'💰'};
+const XFER_CAT = {id:'xfer', name:'Обмен / перевод', ico:'⇄'};
 // порядок проверки: специфичные раньше общих (транспорт раньше жилья из-за «аренда байка»; спорт раньше «зал»)
 const CAT_ORDER = ['sport','transport','travel','health','subs','grocery','food','shopping','beauty','edu','gifts','fees','fun','housing'];
 function guessCat(note){
@@ -383,13 +461,13 @@ function guessCat(note){
   return 'other';
 }
 function normNote(s){ return String(s||'').toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9 ]+/g,' ').replace(/\s+/g,' ').trim(); }
-function catOf(x){ return x.type==='inc' ? INCOME_CAT : (CAT_BY_ID[x.cat]||CAT_BY_ID.other); }
+function catOf(x){ return x.type==='inc' ? INCOME_CAT : x.type==='xfer' ? XFER_CAT : (CAT_BY_ID[x.cat]||CAT_BY_ID.other); }
 
 /* ---------- state ---------- */
 const state = {
   entries:[], learned:{},
   settings:{ rates:{RUB:84.34, VND:25984}, ratesUpdated:'2026-09-15', ratesFetched:0, ratesSource:'', autoRates:true, rateSource:'auto',
-             defaultCur:'VND', budget:{amount:0, cur:'VND', updated:0}, savePct:30, saveWallet:'', lastBackup:0, backupRemind:true,
+             defaultCur:'VND', budget:{amount:0, cur:'VND', updated:0}, savePct:30, saveWallet:'', lastBackup:0, backupRemind:true, inputMode:'text', balances:{},
              gh:{token:'', repo:'rashodnik-data', owner:'', lastSync:0} },
   viewCur:'VND', mode:'week', anchor:null, editing:null, search:'', openRow:null, dirty:false,
 };
@@ -459,7 +537,7 @@ function parseNumber(raw,cur){
   s=s.replace(',','.');
   const n=Number(s); return isFinite(n)?n:NaN;
 }
-const AMT_RE = new RegExp('^([\\-−–—+])?\\s*(\\d[\\d\\s.,]*)\\s*(k|к|тыс\\.?)?\\s*'+CUR_RE+'(?=$|\\s|[-–—:,;])\\s*(?:[-–—:;]\\s*)?(.*)$','i');
+const AMT_RE = new RegExp('^[<>]?\\s*([\\-−–—+])?\\s*(\\d[\\d\\s.,]*)\\s*(k|к|тыс\\.?)?\\s*'+CUR_RE+'(?=$|\\s|[-–—:,;])\\s*(?:[-–—:;]\\s*)?(.*)$','i');
 const AMT_ANY = new RegExp('([\\-−–—+])?\\s*(\\d[\\d\\s.,]*)\\s*(k|к|тыс\\.?)?\\s*'+CUR_RE+'(?=$|\\s|[-–—:,;])','i');
 const DATE_RE = /^(\d{1,2})[.\/](\d{1,2})(?:[.\/](\d{2,4}))?\s*[:\-–—]?\s*$/;
 function parseInput(text, defCur){
@@ -474,6 +552,14 @@ function parseInput(text, defCur){
       if(isNaN(d)||d.getMonth()!==Number(dm[2])-1){ bad.push(line); continue; }
       date=ymd(d); continue;
     }
+    // обмен валют: «100$ > 2600k обмен» — ушло слева, пришло справа
+    const xm=line.match(/^(.+?)\s*(?:>|→|->)\s*(.+)$/);
+    if(xm){
+      const a=xm[1].match(AMT_ANY), rest=xm[2]; const bm=rest.match(AMT_ANY);
+      if(a&&bm){ const ca=detectCur(a[4])||defCur, cb=detectCur(bm[4])||defCur; let va=parseNumber(a[2],ca), vb=parseNumber(bm[2],cb); if(a[3]) va*=1000; if(bm[3]) vb*=1000;
+        const note=rest.replace(bm[0],'').replace(/^\s*[-–—:;]\s*|\s*[-–—:;]\s*$/g,'').trim()||'обмен';
+        if(va>0&&vb>0){ const pid=uid(); out.push({date,amount:va,cur:ca,note,type:'xfer',dir:'out',cat:'xfer',pair:pid}); out.push({date,amount:vb,cur:cb,note,type:'xfer',dir:'in',cat:'xfer',pair:pid}); continue; } }
+    }
     // хвост из резервной копии: {курс_руб;курс_донг} и [категория]
     let rate=null, catTag=null, body=line;
     let saveTag=null; const st=body.match(/\s*<(\d{1,3})\|([01])>\s*$/); if(st){ saveTag={pct:Number(st[1]), done:st[2]==='1'}; body=body.slice(0,st.index).trim(); }
@@ -483,15 +569,16 @@ function parseInput(text, defCur){
     if(m){ note=m[5]; }
     else { m=body.match(AMT_ANY); if(m){ note=body.replace(m[0],'').replace(/^\s*[-–—:;]\s*|\s*[-–—:;]\s*$/g,'').trim(); } }
     if(!m){ bad.push(line); continue; }
-    const type = m[1]==='+' ? 'inc' : 'exp';
+    let type = m[1]==='+' ? 'inc' : 'exp'; let dir=null;
+    if(/^[<>]/.test(body)){ type='xfer'; dir = body[0]==='>' ? 'out' : 'in'; }
     let cur=detectCur(m[4]); if(!cur) cur=defCur;
     let amount=parseNumber(m[2],cur);
     if(m[3]) amount*=1000;
     if(!isFinite(amount)||amount<=0){ bad.push(line); continue; }
     note=(note||'').trim();
-    const ent={date, amount, cur, note, type};
+    const ent={date, amount, cur, note, type}; if(dir) ent.dir=dir;
     if(type==='inc'){ ent.savePct = saveTag? saveTag.pct : (state.settings.savePct||0); ent.saved = saveTag? saveTag.done : false; }
-    ent.cat = type==='inc' ? 'income' : ((catTag && CAT_BY_ID[catTag]) ? catTag : guessCat(note));
+    ent.cat = type==='inc' ? 'income' : type==='xfer' ? 'xfer' : ((catTag && CAT_BY_ID[catTag]) ? catTag : guessCat(note));
     if(rate) ent.rate=rate;
     out.push(ent);
   }
@@ -581,12 +668,21 @@ function restoreEntry(id){ const e=findEntry(id); if(e){ delete e.del; e.updated
 function updateEntry(id, patch){ const e=findEntry(id); if(!e) return; Object.assign(e,patch); e.updated=Date.now(); persist(); }
 function learnCat(note, cat){ const k=normNote(note); if(!k) return; state.learned[k]=cat; }
 function entriesIn(s,e){ return live().filter(x=>x.date>=s && x.date<=e); }
+/* остатки по валютам: якорь (сумма на момент сверки) + движение после якоря по времени записи */
+function balanceOf(cur){
+  const b=(state.settings.balances||{})[cur]; if(!b) return null;
+  let v=b.amount;
+  for(const x of live()){ if(x.cur!==cur || (x.ts||0)<=b.ts) continue;
+    if(x.type==='inc') v+=x.amount; else if(x.type==='xfer') v+= x.dir==='in'? x.amount : -x.amount; else v-=x.amount; }
+  return v;
+}
+function setAnchor(cur, amount){ (state.settings.balances ||= {})[cur]={amount, ts:Date.now(), date:today()}; }
 function saveAmt(x){ return x.amount*((x.savePct||0)/100); }
 function savePending(){ return live().filter(x=>x.type==='inc' && (x.savePct||0)>0 && !x.saved); }
 function saveDone(){ return live().filter(x=>x.type==='inc' && (x.savePct||0)>0 && x.saved); }
 function sumSave(list,cur){ cur=cur||state.viewCur; return list.reduce((a,x)=>a+convert(saveAmt(x),x.cur,cur,x.rate),0); }
 function markSaved(id,val){ const e=findEntry(id); if(e){ e.saved=val; e.savedTs=val?Date.now():0; e.updated=Date.now(); persist(); } }
-function expOf(list){ return list.filter(x=>x.type!=='inc'); }
+function expOf(list){ return list.filter(x=>x.type!=='inc' && x.type!=='xfer'); }
 function incOf(list){ return list.filter(x=>x.type==='inc'); }
 function sumIn(list,cur){ cur=cur||state.viewCur; return list.reduce((a,x)=>a+conv(x,cur),0); }
 
@@ -603,7 +699,7 @@ function render(){
   document.querySelectorAll('#curSeg button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.cur===state.viewCur)));
   document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.mode===state.mode)));
   $('#defCurHint').textContent=CUR[state.settings.defaultCur].name;
-  renderChips(); renderBanner(); renderSavings();
+  renderChips(); renderBanner(); renderSavings(); renderWallets(); renderEvening(); renderInputMode();
   if(state.search){ renderSearch(); return; }
   $('#analytics').hidden = state.mode!=='month';
   const [s,e]=periodRange();
@@ -693,6 +789,41 @@ function renderChips(){
   box.innerHTML=top.map(g=>{ const [ak]=Object.entries(g.amts).sort((a,b)=>b[1]-a[1])[0]; const [cur,amt]=ak.split('|'); const line=`-${fmtAmtShort(Number(amt),cur)} ${g.note}`; return `<button type="button" data-line="${esc(line)}">${catOf({cat:guessCat(g.note)}).ico} ${esc(g.note)} <span class="num" style="color:var(--muted)">${fmtAmtShort(Number(amt),cur)}</span></button>`; }).join('');
 }
 $('#chips').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; const ta=$('#input'); ta.value=(ta.value.trim()? ta.value.replace(/\s*$/,'')+'\n':'')+b.dataset.line; updatePreview(); ta.focus(); ta.setSelectionRange(ta.value.length,ta.value.length); });
+function renderInputMode(){
+  const m=state.settings.inputMode||'text';
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.input===m)));
+  $('#textEntry').hidden = m!=='text'; $('#btnEntry').hidden = m!=='buttons';
+  if(m==='buttons' && !$('#homeGrid').childElementCount){ $('#homeGrid').innerHTML=catGrid(); $('#homeGrid').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>openSheet({cat:b.dataset.cat}))); }
+}
+function catGrid(){ return CATS.map(c=>`<button type="button" data-cat="${c.id}" aria-pressed="false"><i>${c.ico}</i>${c.name}</button>`).join('')+`<button type="button" class="income" data-cat="income" aria-pressed="false"><i>${INCOME_CAT.ico}</i>Доход</button>`; }
+function renderWallets(){
+  const el=$('#wallets'); const bals=state.settings.balances||{}; const curs=Object.keys(CUR).filter(c=>bals[c]);
+  el.hidden=false;
+  if(!curs.length){ el.innerHTML=`<h3>Кошельки <span>не настроены</span></h3><div class="foot"><span>Укажи, сколько денег сейчас на руках — и приложение будет считать остаток и подсказывать незаписанные траты.</span><button type="button" class="ghost" id="setupBal">Указать остатки</button></div>`; el.querySelector('#setupBal').addEventListener('click',()=>openRecon(true)); return; }
+  const oldest=Math.min(...curs.map(c=>bals[c].ts)); const days=Math.floor((Date.now()-oldest)/86400000);
+  el.innerHTML=`<h3>Кошельки <span>расчётный остаток</span></h3><div class="bal">${curs.map(c=>`<div class="num">${fmtMoney(balanceOf(c),c)}<small>сверка ${fmtDayShort(bals[c].date)}</small></div>`).join('')}</div>
+  <div class="foot"><span>${days>=3?`Последняя сверка ${days} дн. назад — проверь, сходится ли.`:'Если на руках другая сумма — нажми «Сверить».'}</span><button type="button" class="ghost" id="reconBtn">Сверить</button></div>`;
+  el.querySelector('#reconBtn').addEventListener('click',()=>openRecon(false));
+}
+function frequentItems(limit){
+  const since=addDays(today(),-90); const groups={};
+  live().filter(x=>x.type==='exp'||!x.type).filter(x=>x.date>=since&&x.note).forEach(x=>{ const k=normNote(x.note); const g=(groups[k] ||= {note:x.note,cat:x.cat,count:0,amts:{}}); g.count++; const ak=x.cur+'|'+Math.round(x.amount); g.amts[ak]=(g.amts[ak]||0)+1; });
+  return Object.values(groups).filter(g=>g.count>=2).sort((a,b)=>b.count-a.count).slice(0,limit).map(g=>{ const [ak]=Object.entries(g.amts).sort((a,b)=>b[1]-a[1])[0]; const [cur,amt]=ak.split('|'); return {note:g.note,cat:g.cat,cur,amount:Number(amt),count:g.count}; });
+}
+function renderEvening(){
+  const el=$('#evening'); const h=new Date().getHours();
+  const todays=live().filter(x=>x.date===today()&&x.type!=='xfer');
+  const items=frequentItems(8);
+  const dismissed = sessionStorage.getItem('rashodnik.evening')===today();
+  const show = h>=17 && todays.length===0 && !dismissed && !state.search;
+  el.hidden=!show; if(!show) return;
+  el.innerHTML=`<h3>Сегодня пока ничего не записано</h3><p>Отметь, что было — сумму потом можно поправить.</p>
+  ${items.length?`<div class="list">${items.map((it,i)=>`<label><input type="checkbox" data-i="${i}"><span>${catOf({cat:it.cat}).ico} ${esc(it.note)}</span><span class="a num">${fmtMoney(it.amount,it.cur)}</span></label>`).join('')}</div>`:''}
+  <div class="row"><button type="button" class="ghost" id="evLater">Ничего не тратил</button><span style="display:flex;gap:8px"><button type="button" class="ghost" id="evOther">Другое…</button>${items.length?'<button type="button" class="primary" id="evSave" style="height:36px">Записать отмеченное</button>':''}</span></div>`;
+  el.querySelector('#evLater').addEventListener('click',()=>{ try{ sessionStorage.setItem('rashodnik.evening',today()); }catch(e){} render(); });
+  el.querySelector('#evOther').addEventListener('click',()=>openSheet({}));
+  const sv=el.querySelector('#evSave'); if(sv) sv.addEventListener('click',async()=>{ const sel=[...el.querySelectorAll('input:checked')].map(i=>items[Number(i.dataset.i)]); if(!sel.length){ toast('Отметь хотя бы одну'); return; } await addEntries(sel.map(it=>({date:today(),amount:it.amount,cur:it.cur,note:it.note,type:'exp',cat:it.cat||guessCat(it.note)}))); render(); toast(`Записано: ${sel.length}`); });
+}
 function renderSavings(){
   const el=$('#savings'); const pend=savePending().sort((a,b)=>a.date<b.date?1:-1), done=saveDone();
   if(!pend.length && !done.length){ el.hidden=true; return; }
@@ -728,9 +859,9 @@ function dayCard(d, items, opts){
   return card;
 }
 function rowEl(x){
-  const shown=conv(x,state.viewCur); const inc=x.type==='inc';
+  const shown=conv(x,state.viewCur); const inc=x.type==='inc'; const xf=x.type==='xfer';
   const w=document.createElement('div'); w.className='rw';
-  w.innerHTML=`<button type="button" class="del" aria-label="Удалить">Удалить</button><button type="button" class="r">${catChip(x)}<span class="note${x.note?'':' empty'}">${x.note?esc(x.note):'без описания'}<small>${catOf(x).name}</small></span><span class="amt num${inc?' inc':''}">${inc?'+':'−'}${fmtMoney(shown,state.viewCur)}${x.cur!==state.viewCur?`<span class="orig">${fmtMoney(x.amount,x.cur)}</span>`:''}</span></button>`;
+  w.innerHTML=`<button type="button" class="del" aria-label="Удалить">Удалить</button><button type="button" class="r">${catChip(x)}<span class="note${x.note?'':' empty'}">${x.note?esc(x.note):'без описания'}<small>${catOf(x).name}</small></span><span class="amt num${inc?' inc':''}${xf?' xfer':''}">${xf?(x.dir==='in'?'⇄ +':'⇄ −'):inc?'+':'−'}${fmtMoney(shown,state.viewCur)}${x.cur!==state.viewCur?`<span class="orig">${fmtMoney(x.amount,x.cur)}</span>`:''}</span></button>`;
   const r=w.querySelector('.r');
   // свайп влево — удалить
   let sx=0, sy=0, dx=0, drag=false, moved=false;
@@ -752,8 +883,8 @@ function renderDays(list){
 }
 function editForm(x){
   const f=document.createElement('form'); f.className='edit';
-  const cats = x.type==='inc' ? [INCOME_CAT] : CATS;
-  f.innerHTML=`<div class="l1"><input class="num" id="e-amt" type="text" inputmode="decimal" value="${x.amount}" aria-label="Сумма"><select id="e-cur" aria-label="Валюта">${Object.keys(CUR).map(c=>`<option value="${c}"${c===x.cur?' selected':''}>${CUR[c].sym}</option>`).join('')}</select><select id="e-type" aria-label="Тип"><option value="exp"${x.type!=='inc'?' selected':''}>расход</option><option value="inc"${x.type==='inc'?' selected':''}>доход</option></select></div>
+  const cats = x.type==='inc' ? [INCOME_CAT] : x.type==='xfer' ? [XFER_CAT] : CATS;
+  f.innerHTML=`<div class="l1"><input class="num" id="e-amt" type="text" inputmode="decimal" value="${x.amount}" aria-label="Сумма"><select id="e-cur" aria-label="Валюта">${Object.keys(CUR).map(c=>`<option value="${c}"${c===x.cur?' selected':''}>${CUR[c].sym}</option>`).join('')}</select><select id="e-type" aria-label="Тип"><option value="exp"${x.type!=='inc'&&x.type!=='xfer'?' selected':''}>расход</option><option value="inc"${x.type==='inc'?' selected':''}>доход</option><option value="xfer"${x.type==='xfer'?' selected':''}>обмен/перевод</option></select></div>
   <input id="e-note" type="text" value="${esc(x.note)}" placeholder="описание" aria-label="Описание">
   <input id="e-date" type="date" value="${x.date}" aria-label="Дата">
   <div class="catpick" id="e-cats">${cats.map(c=>`<button type="button" data-cat="${c.id}" aria-pressed="${(x.cat||'other')===c.id}">${c.ico} ${c.name}</button>`).join('')}</div>
@@ -771,7 +902,7 @@ function editForm(x){
     if(!isFinite(amount)||amount<=0){ toast('Сумма не распознана'); return; }
     const date=f.querySelector('#e-date').value||x.date; const type=f.querySelector('#e-type').value; const note=f.querySelector('#e-note').value.trim();
     if(type!=='inc' && cat!==x.cat) learnCat(note,cat);
-    const patch={amount,cur,note,date,type,cat:type==='inc'?'income':cat};
+    const patch={amount,cur,note,date,type,cat:type==='inc'?'income':type==='xfer'?'xfer':cat}; if(type==='xfer' && !x.dir) patch.dir='out';
     if(type==='inc'){ patch.savePct=Math.max(0,Math.min(100,Number(f.querySelector('#e-pct').value)||0)); patch.saved=f.querySelector('#e-saved').checked; }
     state.editing=null; updateEntry(x.id,patch); render(); toast('Сохранено');
   });
@@ -873,13 +1004,13 @@ function exportText(){
   const byDay={}; live().forEach(x=>(byDay[x.date] ||= []).push(x));
   return Object.keys(byDay).sort().map(d=>{
     const dd=parseYmd(d); const head=String(dd.getDate()).padStart(2,'0')+'.'+String(dd.getMonth()+1).padStart(2,'0')+'.'+dd.getFullYear();
-    return head+'\n'+byDay[d].sort((a,b)=>(a.ts||0)-(b.ts||0)).map(x=>`${x.type==='inc'?'+':'-'}${x.cur==='VND'?Math.round(x.amount):x.amount}${CUR[x.cur].sym}${x.note?' - '+x.note:''}${x.type!=='inc'&&x.cat&&x.cat!=='other'?` [${x.cat}]`:''}${x.rate?` {${x.rate.RUB};${x.rate.VND}}`:''}${x.type==='inc'&&x.savePct>0?` <${x.savePct}|${x.saved?1:0}>`:''}`).join('\n');
+    return head+'\n'+byDay[d].sort((a,b)=>(a.ts||0)-(b.ts||0)).map(x=>`${x.type==='xfer'?(x.dir==='in'?'<':'>'):x.type==='inc'?'+':'-'}${x.cur==='VND'?Math.round(x.amount):x.amount}${CUR[x.cur].sym}${x.note?' - '+x.note:''}${x.type!=='inc'&&x.cat&&x.cat!=='other'?` [${x.cat}]`:''}${x.rate?` {${x.rate.RUB};${x.rate.VND}}`:''}${x.type==='inc'&&x.savePct>0?` <${x.savePct}|${x.saved?1:0}>`:''}`).join('\n');
   }).join('\n\n');
 }
 function csvText(){
   const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
   const head=['Дата','Тип','Сумма','Валюта','Категория','Описание','Курс ₽ за $','Курс ₫ за $','В донгах','В долларах','В рублях','Отложить %','Отложить сумма','Отложено'];
-  const rows=live().sort((a,b)=>a.date===b.date?(a.ts||0)-(b.ts||0):(a.date<b.date?-1:1)).map(x=>[x.date, x.type==='inc'?'доход':'расход', String(x.amount).replace('.',','), x.cur, catOf(x).name, x.note, x.rate?String(x.rate.RUB).replace('.',','):'', x.rate?x.rate.VND:'', Math.round(conv(x,'VND')), String(Math.round(conv(x,'USD')*100)/100).replace('.',','), String(Math.round(conv(x,'RUB')*100)/100).replace('.',','), x.type==='inc'?(x.savePct||0):'', x.type==='inc'&&x.savePct>0?String(Math.round(saveAmt(x)*100)/100).replace('.',','):'', x.type==='inc'&&x.savePct>0?(x.saved?'да':'нет'):'']);
+  const rows=live().sort((a,b)=>a.date===b.date?(a.ts||0)-(b.ts||0):(a.date<b.date?-1:1)).map(x=>[x.date, x.type==='inc'?'доход':x.type==='xfer'?(x.dir==='in'?'обмен (пришло)':'обмен (ушло)'):'расход', String(x.amount).replace('.',','), x.cur, catOf(x).name, x.note, x.rate?String(x.rate.RUB).replace('.',','):'', x.rate?x.rate.VND:'', Math.round(conv(x,'VND')), String(Math.round(conv(x,'USD')*100)/100).replace('.',','), String(Math.round(conv(x,'RUB')*100)/100).replace('.',','), x.type==='inc'?(x.savePct||0):'', x.type==='inc'&&x.savePct>0?String(Math.round(saveAmt(x)*100)/100).replace('.',','):'', x.type==='inc'&&x.savePct>0?(x.saved?'да':'нет'):'']);
   return '﻿'+[head,...rows].map(r=>r.map(q).join(';')).join('\r\n');
 }
 async function saveFile(name, content, mime){
@@ -917,10 +1048,11 @@ function mergeData(local, remote){
   const cutoff=Date.now()-90*86400000;
   const entries=[...m.values()].filter(e=>!(e.del && (e.updated||0)<cutoff));
   const learned={...(remote.learned||{}), ...local.learned};
+  const balances={...(remote.balances||{})}; for(const [c,b] of Object.entries(local.balances||{})){ if(!balances[c] || (b.ts||0)>(balances[c].ts||0)) balances[c]=b; }
   const budget = ((remote.budget&&remote.budget.updated)||0) > (local.budget.updated||0) ? remote.budget : local.budget;
-  return {entries, learned, budget};
+  return {entries, learned, budget, balances};
 }
-function snapshotForSync(d){ return JSON.stringify({entries:d.entries, learned:d.learned, budget:d.budget}); }
+function snapshotForSync(d){ return JSON.stringify({entries:d.entries, learned:d.learned, budget:d.budget, balances:d.balances||{}}); }
 let syncTimer=null, syncing=false, syncAgain=false;
 function scheduleSync(){ if(!state.settings.gh.token) return; clearTimeout(syncTimer); syncTimer=setTimeout(()=>syncNow(false), 2500); }
 async function syncNow(manual){
@@ -937,10 +1069,10 @@ async function syncNow(manual){
     if(r.status===404){ const rr=await fetch(`${GH}/repos/${g.owner}/${g.repo}`,{headers:ghHeaders()}); if(rr.status===404) throw {code:'norepo'}; }
     else if(!r.ok) throw {code:'http',status:r.status};
     else { const j=await r.json(); sha=j.sha; try{ remote=JSON.parse(b64dec(j.content)); }catch(e){ remote={entries:[],learned:{},budget:{}}; } }
-    const merged=mergeData({entries:state.entries, learned:state.learned, budget:state.settings.budget}, remote);
-    state.entries=merged.entries; state.learned=merged.learned; state.settings.budget=merged.budget;
+    const merged=mergeData({entries:state.entries, learned:state.learned, budget:state.settings.budget, balances:state.settings.balances||{}}, remote);
+    state.entries=merged.entries; state.learned=merged.learned; state.settings.budget=merged.budget; state.settings.balances=merged.balances;
     if(snapshotForSync(merged)!==snapshotForSync(remote)){
-      const body={message:'rashodnik sync '+new Date().toISOString(), content:b64enc(JSON.stringify({...merged, version:3, savedAt:Date.now()}))}; if(sha) body.sha=sha;
+      const body={message:'rashodnik sync '+new Date().toISOString(), content:b64enc(JSON.stringify({...merged, version:4, savedAt:Date.now()}))}; if(sha) body.sha=sha;
       const p=await fetch(path,{method:'PUT',headers:{...ghHeaders(),'Content-Type':'application/json'},body:JSON.stringify(body)});
       if(p.status===409 || p.status===422){ syncing=false; return syncNow(manual); } // кто-то записал раньше — повторяем с новым sha
       if(p.status===401) throw {code:'auth'}; if(p.status===404) throw {code:'norepo'}; if(!p.ok) throw {code:'http',status:p.status};
@@ -964,6 +1096,73 @@ $('#syncNow').addEventListener('click',()=>syncNow(true));
 $('#syncOff').addEventListener('click',()=>{ state.settings.gh={token:'',repo:state.settings.gh.repo||'rashodnik-data',owner:'',lastSync:0}; saveLocal(); fillSettings(); setRatesLine(); render(); toast('Синхронизация отключена, записи остались на устройстве'); });
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'){ fetchRates(false); if(state.settings.gh.token) syncNow(false); } });
 window.addEventListener('online',()=>{ fetchRates(false); if(state.settings.gh.token) syncNow(false); });
+
+/* ---------- быстрый ввод кнопками ---------- */
+const sheet=$('#sheetDlg'); let shCur='VND', shCat='other';
+const QUICK={VND:[20000,50000,100000,200000,500000,1000000],USD:[5,10,20,50,100],RUB:[100,300,500,1000,3000]};
+function openSheet(o){
+  shCur=(o&&o.cur)||state.settings.defaultCur||'VND'; shCat=(o&&o.cat)||'other';
+  $('#sh-amt').value=''; $('#sh-note').value=''; $('#sh-yday').checked=false;
+  $('#sh-grid').innerHTML=catGrid(); paintSheet(); sheet.showModal(); setTimeout(()=>$('#sh-amt').focus(),50);
+}
+function paintSheet(){
+  document.querySelectorAll('#sh-cur button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cur===shCur)));
+  document.querySelectorAll('#sh-grid button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.cat===shCat)));
+  $('#sh-quick').innerHTML=QUICK[shCur].map(v=>`<button type="button" data-v="${v}">${fmtAmtShort(v,shCur)}</button>`).join('');
+  $('#sh-save').textContent = shCat==='income' ? 'Записать доход' : 'Записать';
+}
+$('#sh-cur').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; shCur=b.dataset.cur; paintSheet(); });
+$('#sh-grid').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; shCat=b.dataset.cat; paintSheet(); });
+$('#sh-quick').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; $('#sh-amt').value=b.dataset.v; });
+$('#sheetClose').addEventListener('click',()=>sheet.close()); sheet.addEventListener('click',e=>{ if(e.target===sheet) sheet.close(); });
+$('#sheetForm').addEventListener('submit',async ev=>{ ev.preventDefault();
+  let raw=$('#sh-amt').value.trim(); const km=raw.match(/^([\d\s.,]+)\s*(k|к)$/i); let amount=parseNumber(km?km[1]:raw,shCur); if(km) amount*=1000;
+  if(!isFinite(amount)||amount<=0){ toast('Введи сумму'); return; }
+  const note=$('#sh-note').value.trim(); const date=$('#sh-yday').checked? addDays(today(),-1) : today();
+  const inc=shCat==='income'; const ent={date,amount,cur:shCur,note,type:inc?'inc':'exp',cat:inc?'income':(shCat==='other'&&note?guessCat(note):shCat)};
+  if(inc){ ent.savePct=state.settings.savePct||0; ent.saved=false; }
+  sheet.close(); await addEntries([ent]); render();
+  toast(inc&&ent.savePct>0? `Записано · отложи ${fmtMoney(saveAmt(ent),ent.cur)}` : `Записано: ${catOf(ent).ico} ${fmtMoney(amount,shCur)}`);
+});
+$('#openSheet').addEventListener('click',()=>openSheet({}));
+$('#modeSeg').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b) return; state.settings.inputMode=b.dataset.input; saveLocal(); renderInputMode(); });
+
+/* ---------- сверка кошельков ---------- */
+const recon=$('#reconDlg'); let reconSetup=false;
+function openRecon(setup){
+  reconSetup=setup; const bals=state.settings.balances||{};
+  $('#reconTitle').firstChild.textContent = setup? 'Остатки на руках ' : 'Сверка ';
+  $('#reconHint').textContent = setup ? 'Впиши, сколько денег у тебя сейчас по каждой валюте (наличные + карта). Пустое поле — валюту не отслеживать.' : 'Впиши, сколько денег у тебя сейчас на самом деле. Разницу с расчётом приложение запишет одной строкой, чтобы всё снова сходилось.';
+  $('#reconRows').innerHTML=Object.keys(CUR).map(c=>{ const calc=balanceOf(c); return `<div class="cur"><b>${CUR[c].sym}</b><input class="num" data-cur="${c}" type="text" inputmode="decimal" placeholder="${setup?'сейчас на руках':(calc==null?'не отслеживается':'на самом деле')}" ${(!setup&&calc==null)?'disabled':''}><span class="calc">${calc==null?'':'по расчёту '+fmtMoney(calc,c)}</span></div>`; }).join('');
+  $('#reconDiffs').innerHTML=''; $('#reconXferWrap').hidden=true; $('#reconXfer').checked=false;
+  $('#reconRows').querySelectorAll('input').forEach(i=>i.addEventListener('input',reconPreview));
+  if(setup) $('#reconRows').querySelectorAll('input').forEach(i=>{ if(bals[i.dataset.cur]) i.value=Math.round(balanceOf(i.dataset.cur)*100)/100; });
+  recon.showModal();
+}
+function reconRead(){ const out={}; $('#reconRows').querySelectorAll('input').forEach(i=>{ const v=i.value.trim(); if(!v||i.disabled) return; const km=v.match(/^([\d\s.,]+)\s*(k|к)$/i); let n=parseNumber(km?km[1]:v,i.dataset.cur); if(km) n*=1000; if(isFinite(n)&&n>=0) out[i.dataset.cur]=n; }); return out; }
+function reconPreview(){
+  if(reconSetup) return; const vals=reconRead(); const diffs=[];
+  for(const [c,v] of Object.entries(vals)){ const calc=balanceOf(c); if(calc==null) continue; const d=v-calc; if(Math.abs(d)>=(c==='VND'?500:0.5)) diffs.push({c,d}); }
+  $('#reconDiffs').innerHTML=diffs.map(x=>`<div class="diff ${x.d<0?'neg':'pos'}">${CUR[x.c].sym}: ${x.d<0?'не хватает':'больше расчёта на'} <b class="num">${fmtMoney(Math.abs(x.d),x.c)}</b> → ${x.d<0?'запишу как «незаписанные траты»':'запишу как «неучтённое поступление»'}</div>`).join('') || (Object.keys(vals).length?'<div class="diff">Всё сходится ✓</div>':'');
+  const neg=diffs.filter(x=>x.d<0), pos=diffs.filter(x=>x.d>0);
+  $('#reconXferWrap').hidden = !(neg.length===1 && pos.length===1);
+}
+$('#reconClose').addEventListener('click',()=>recon.close()); $('#reconCancel').addEventListener('click',()=>recon.close());
+$('#reconSave').addEventListener('click',async()=>{
+  const vals=reconRead(); if(!Object.keys(vals).length){ toast('Впиши хотя бы одну сумму'); return; }
+  if(reconSetup){ for(const [c,v] of Object.entries(vals)) setAnchor(c,v); for(const c of Object.keys(CUR)){ if(!(c in vals) && state.settings.balances[c]) delete state.settings.balances[c]; } persist(); recon.close(); render(); toast('Остатки сохранены'); return; }
+  const adds=[]; const diffs=[];
+  for(const [c,v] of Object.entries(vals)){ const calc=balanceOf(c); if(calc==null){ setAnchor(c,v); continue; } const d=v-calc; if(Math.abs(d)>=(c==='VND'?500:0.5)) diffs.push({c,d}); }
+  const neg=diffs.filter(x=>x.d<0), pos=diffs.filter(x=>x.d>0);
+  if($('#reconXfer').checked && neg.length===1 && pos.length===1){ const pid=uid(); adds.push({date:today(),amount:-neg[0].d,cur:neg[0].c,note:'обмен валют (по сверке)',type:'xfer',dir:'out',cat:'xfer',pair:pid},{date:today(),amount:pos[0].d,cur:pos[0].c,note:'обмен валют (по сверке)',type:'xfer',dir:'in',cat:'xfer',pair:pid}); }
+  else { for(const x of diffs){ if(x.d<0) adds.push({date:today(),amount:-x.d,cur:x.c,note:'незаписанные траты (сверка)',type:'exp',cat:'other'}); else adds.push({date:today(),amount:x.d,cur:x.c,note:'неучтённое поступление (сверка)',type:'inc',cat:'income',savePct:0,saved:true}); } }
+  if(adds.length) await addEntries(adds);
+  for(const [c,v] of Object.entries(vals)) setAnchor(c,v);
+  persist(); recon.close(); render();
+  toast(adds.length? `Сверено: добавлено ${adds.length} ${adds.length===1?'запись':'записи'}` : 'Сверено — всё сходится ✓');
+});
+$('#openRecon').addEventListener('click',()=>{ dlg.close(); openRecon(!Object.keys(state.settings.balances||{}).length); });
+$('#clearBal').addEventListener('click',()=>{ state.settings.balances={}; persist(); dlg.close(); render(); toast('Остатки сброшены'); });
 
 /* ---------- старт ---------- */
 loadLocal();
